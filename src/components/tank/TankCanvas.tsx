@@ -585,15 +585,25 @@ export default function TankCanvas({
       }
     };
 
-    // 说话轮换：每 10 秒随机选最多 3 条有语句的鱼
+    // 说话：以长时间静默为主，偶尔有鱼说话
+    // 静默 16~60 秒 → 约 55% 概率 1 条鱼说 9 秒，13% 概率 2 条鱼同时说，32% 概率继续安静
+    let speechTimer = 0;
+    let bubbleTimer = 0;
+
     const pickSpeakers = () => {
       const candidates = [...simRef.current.values()].filter(
         (s) => s.row.statements.length > 0
       );
-      const count = Math.min(3, candidates.length);
+      if (candidates.length === 0) return;
+      const roll = Math.random();
+      let count = 0;
+      if (roll < 0.55) count = 1;
+      else if (roll < 0.68) count = 2;
+      if (count === 0) return;
+
       const pool = [...candidates];
       const picked: Bubble[] = [];
-      for (let i = 0; i < count; i++) {
+      for (let i = 0; i < count && pool.length > 0; i++) {
         const idx = Math.floor(Math.random() * pool.length);
         const f = pool.splice(idx, 1)[0];
         const stmts = f.row.statements;
@@ -607,9 +617,19 @@ export default function TankCanvas({
       }
       bubblesRef.current = picked;
       setBubbles(picked);
+      bubbleTimer = window.setTimeout(() => {
+        bubblesRef.current = [];
+        setBubbles([]);
+      }, 9000);
     };
-    pickSpeakers();
-    const speechTimer = window.setInterval(pickSpeakers, 10000);
+
+    const scheduleSpeech = () => {
+      speechTimer = window.setTimeout(() => {
+        pickSpeakers();
+        scheduleSpeech();
+      }, 16000 + Math.random() * 44000);
+    };
+    scheduleSpeech();
 
     let last = performance.now();
     let raf = 0;
@@ -628,7 +648,8 @@ export default function TankCanvas({
 
     return () => {
       cancelAnimationFrame(raf);
-      clearInterval(speechTimer);
+      clearTimeout(speechTimer);
+      clearTimeout(bubbleTimer);
       ro.disconnect();
       window.removeEventListener("resize", resize);
     };

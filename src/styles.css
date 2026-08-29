@@ -172,7 +172,7 @@ body::before {
 
 .sphere-title {
   font-family: "Noto Sans SC", sans-serif;
-  font-size: 66px;
+  font-size: 86px;
   font-weight: 900;
   letter-spacing: 0.2em;
   white-space: nowrap;
@@ -278,7 +278,7 @@ body::before {
     letter-spacing: 0.08em;
   }
   .sphere-title {
-    font-size: 44px;
+    font-size: 56px;
   }
   .sphere-container::before {
     width: 380px;

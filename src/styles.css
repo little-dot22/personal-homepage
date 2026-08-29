@@ -846,3 +846,33 @@ body::before {
   opacity: 0.5;
   cursor: default;
 }
+
+/* 像素画板 */
+.pixel-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pixel-canvas {
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 24 / 16;
+  margin: 0 auto;
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(4, 8, 16, 0.6);
+  cursor: crosshair;
+  touch-action: none;
+  image-rendering: pixelated;
+}
+
+.opt-btn.danger {
+  color: #ff6b6b;
+  border-color: rgba(255, 107, 107, 0.4);
+}
+
+.opt-btn.danger:hover {
+  border-color: #ff6b6b;
+}

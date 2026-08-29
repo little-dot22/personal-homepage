@@ -19,6 +19,7 @@ export interface FishRow {
   level: number;
   feed_count: number;
   last_levelup_date?: string | null;
+  custom_drawing?: Array<string | null> | null;
   created_at: string;
   updated_at?: string;
 }
@@ -32,4 +33,5 @@ export interface FishAppearance {
   tail: TailId;
   fin: FinId;
   eye: EyeId;
+  custom_drawing?: Array<string | null> | null;
 }

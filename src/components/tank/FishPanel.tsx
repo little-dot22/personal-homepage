@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import { blankDrawing } from "../../lib/fishDraw";
 import { MAX_LEVEL, shanghaiToday } from "../../lib/level";
 import { supabase } from "../../lib/supabase";
 import type { FishAppearance, FishRow } from "../../lib/types";
 import AppearanceEditor from "./AppearanceEditor";
+import PixelFishEditor from "./PixelFishEditor";
 
 export default function FishPanel({
   fish,
@@ -29,6 +31,14 @@ export default function FishPanel({
     fin: fish.fin,
     eye: fish.eye
   });
+  const [appearMode, setAppearMode] = useState<"template" | "draw">(
+    fish.custom_drawing ? "draw" : "template"
+  );
+  const [drawing, setDrawing] = useState<Array<string | null>>(() =>
+    fish.custom_drawing && fish.custom_drawing.length > 0
+      ? [...fish.custom_drawing]
+      : blankDrawing()
+  );
   const [statements, setStatements] = useState<string[]>(() => {
     const arr = [...fish.statements];
     while (arr.length < fish.level) arr.push("");
@@ -79,7 +89,8 @@ export default function FishPanel({
         pattern: appearance.pattern,
         tail: appearance.tail,
         fin: appearance.fin,
-        eye: appearance.eye
+        eye: appearance.eye,
+        custom_drawing: appearMode === "draw" ? drawing : null
       })
       .eq("id", fish.id);
     setBusy(false);
@@ -166,15 +177,41 @@ export default function FishPanel({
 
         {tab === "appearance" && (
           <>
-            <AppearanceEditor
-              value={appearance}
-              onChange={setAppearance}
-              showName={false}
-            />
+            <div className="auth-tabs">
+              <button
+                type="button"
+                className={"opt-btn" + (appearMode === "template" ? " on" : "")}
+                onClick={() => setAppearMode("template")}
+              >
+                模板
+              </button>
+              <button
+                type="button"
+                className={"opt-btn" + (appearMode === "draw" ? " on" : "")}
+                onClick={() => setAppearMode("draw")}
+              >
+                手绘
+              </button>
+            </div>
+            {appearMode === "template" ? (
+              <AppearanceEditor
+                value={appearance}
+                onChange={setAppearance}
+                showName={false}
+              />
+            ) : (
+              <PixelFishEditor drawing={drawing} onChange={setDrawing} />
+            )}
+            {appearMode === "draw" && drawing.every((c) => c === null) && (
+              <p className="form-err">画布还是空的，先画一条鱼吧</p>
+            )}
             {err && <p className="form-err">{err}</p>}
             <button
               className="btn-primary"
-              disabled={busy}
+              disabled={
+                busy ||
+                (appearMode === "draw" && drawing.every((c) => c === null))
+              }
               onClick={() => void saveAppearance()}
             >
               {busy ? "保存中…" : "保存外观"}

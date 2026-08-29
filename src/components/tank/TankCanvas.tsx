@@ -89,7 +89,8 @@ const appOf = (row: FishRow): FishAppearance => ({
   pattern: row.pattern,
   tail: row.tail,
   fin: row.fin,
-  eye: row.eye
+  eye: row.eye,
+  custom_drawing: row.custom_drawing ?? null
 });
 
 const fishSize = (row: FishRow) =>

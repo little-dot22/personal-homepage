@@ -21,6 +21,7 @@ create table if not exists public.fish (
   level int not null default 0,
   feed_count int not null default 0,
   last_levelup_date date,
+  custom_drawing jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -53,7 +54,8 @@ create or replace function public.adopt_fish(
   p_pattern text,
   p_tail text,
   p_fin text,
-  p_eye text
+  p_eye text,
+  p_custom_drawing jsonb default null
 )
 returns public.fish
 language plpgsql
@@ -72,8 +74,8 @@ begin
   if (select count(*) from public.fish) >= 50 then
     raise exception 'tank full';
   end if;
-  insert into public.fish (owner_id, name, color, accent, shape, pattern, tail, fin, eye)
-  values (auth.uid(), p_name, p_color, p_accent, p_shape, p_pattern, p_tail, p_fin, p_eye)
+  insert into public.fish (owner_id, name, color, accent, shape, pattern, tail, fin, eye, custom_drawing)
+  values (auth.uid(), p_name, p_color, p_accent, p_shape, p_pattern, p_tail, p_fin, p_eye, p_custom_drawing)
   returning * into v_fish;
   return v_fish;
 end;
@@ -122,7 +124,7 @@ end;
 $$;
 
 grant execute on function public.feed_fish(uuid) to anon, authenticated;
-grant execute on function public.adopt_fish(text, text, text, text, text, text, text, text) to anon, authenticated;
+grant execute on function public.adopt_fish(text, text, text, text, text, text, text, text, jsonb) to anon, authenticated;
 
 -- ---------- RPC：放生（删除自己的鱼） ----------
 create or replace function public.release_fish(p_fish_id uuid)

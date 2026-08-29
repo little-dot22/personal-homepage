@@ -130,8 +130,68 @@ export interface DrawFishOptions {
   glow?: number;
 }
 
+export const GRID_COLS = 24;
+export const GRID_ROWS = 16;
+export const GRID_CELLS = GRID_COLS * GRID_ROWS;
+
+export const blankDrawing = (): Array<string | null> =>
+  Array(GRID_CELLS).fill(null);
+
+function drawPixelCells(
+  ctx: CanvasRenderingContext2D,
+  drawing: Array<string | null>,
+  cell: number,
+  h: number,
+  size: number,
+  time: number
+) {
+  const wob = Math.sin(time * 4) * cell * 0.45;
+  for (let r = 0; r < GRID_ROWS; r++) {
+    for (let c = 0; c < GRID_COLS; c++) {
+      const color = drawing[r * GRID_COLS + c];
+      if (!color) continue;
+      ctx.fillStyle = color;
+      const wobY = wob * ((r - GRID_ROWS / 2) / GRID_ROWS);
+      ctx.fillRect(
+        -size / 2 + c * cell,
+        -h / 2 + r * cell + wobY,
+        cell + 0.5,
+        cell + 0.5
+      );
+    }
+  }
+}
+
+export function drawPixelFish(
+  ctx: CanvasRenderingContext2D,
+  o: DrawFishOptions & { drawing: Array<string | null> }
+) {
+  const { drawing, size, time, facing, glow } = o;
+  if (drawing.length !== GRID_CELLS) return;
+  const cell = size / GRID_COLS;
+  const h = cell * GRID_ROWS;
+
+  ctx.save();
+  ctx.scale(facing, 1);
+  drawPixelCells(ctx, drawing, cell, h, size, time);
+  if (glow && glow > 0) {
+    ctx.globalCompositeOperation = "lighter";
+    ctx.globalAlpha = glow * 0.6;
+    drawPixelCells(ctx, drawing, cell, h, size, time);
+  }
+  ctx.restore();
+}
+
 export function drawFish(ctx: CanvasRenderingContext2D, o: DrawFishOptions) {
   const a = o.appearance;
+  if (
+    a.custom_drawing &&
+    a.custom_drawing.length === GRID_CELLS &&
+    a.custom_drawing.some((c) => c !== null)
+  ) {
+    drawPixelFish(ctx, { ...o, drawing: a.custom_drawing });
+    return;
+  }
   const w = o.size;
   const h = o.size * bodyHeightRatio(a.shape);
   const tailSwing = Math.sin(o.time * 4) * h * 0.3;

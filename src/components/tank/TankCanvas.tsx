@@ -93,8 +93,7 @@ const appOf = (row: FishRow): FishAppearance => ({
   custom_drawing: row.custom_drawing ?? null
 });
 
-const fishSize = (row: FishRow) =>
-  42 * (1 + Math.min(row.level, 100) * 0.0035);
+const fishSize = (row: FishRow) => 42 + Math.min(row.level, 100) * 1.58;
 
 const spawnFish = (row: FishRow, w: number, h: number): SimFish => ({
   row,

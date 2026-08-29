@@ -133,10 +133,10 @@ begin
   insert into public.feedings (feeder_id, fish_id) values (auth.uid(), p_fish_id);
 
   update public.fish f
-  set f.feed_count = f.feed_count + 1,
-      f.level = v_new_level,
-      f.last_levelup_date = case when v_leveled then v_today else f.last_levelup_date end,
-      f.updated_at = now()
+  set feed_count = f.feed_count + 1,
+      level = v_new_level,
+      last_levelup_date = case when v_leveled then v_today else f.last_levelup_date end,
+      updated_at = now()
   where f.id = p_fish_id;
 
   return query select v_fish.id, v_fish.feed_count + 1, v_new_level, v_leveled;

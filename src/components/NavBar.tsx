@@ -1,0 +1,37 @@
+import type { CSSProperties } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { NAV_ITEMS, useNav } from "../context/NavContext";
+
+export default function NavBar() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { hovered, setHovered } = useNav();
+
+  return (
+    <header className="navbar" onMouseLeave={() => setHovered(null)}>
+      <div className="site-brand" onClick={() => navigate("/")}>
+        个人主页<span className="site-brand-en">PERSONAL</span>
+      </div>
+      <nav className="navbar-inner">
+        {NAV_ITEMS.map((item, i) => {
+          const active =
+            location.pathname === item.path ||
+            (location.pathname === "/" && hovered === i);
+          return (
+            <button
+              key={item.path}
+              type="button"
+              className={"nav-item" + (active ? " active" : "")}
+              style={{ "--accent": item.color } as CSSProperties}
+              onMouseEnter={() => setHovered(i)}
+              onClick={() => navigate(item.path)}
+            >
+              <span className="nav-index">0{i + 1}</span>
+              {item.label}
+            </button>
+          );
+        })}
+      </nav>
+    </header>
+  );
+}

@@ -6,6 +6,8 @@ function mapAuthError(msg: string): string {
   if (msg.includes("Invalid login credentials")) return "邮箱或密码错误";
   if (msg.includes("User already registered")) return "该邮箱已注册，请直接登录";
   if (msg.includes("Email signups are disabled")) return "站点尚未开启邮箱注册，请联系站长";
+  if (msg.includes("Email not confirmed")) return "邮箱尚未验证，请先点击验证邮件里的链接";
+  if (msg.includes("Token has expired or is invalid")) return "验证链接已失效，请重新注册";
   if (msg.includes("at least 6 characters")) return "密码至少 6 位";
   if (msg.includes("valid email")) return "邮箱格式不正确";
   if (msg.includes("rate limit")) return "尝试太频繁，请稍后再试";
@@ -41,12 +43,18 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
     const { error } =
       mode === "login"
         ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
-        : await supabase.auth.signUp({ email: email.trim(), password });
+        : await supabase.auth.signUp({
+            email: email.trim(),
+            password,
+            options: {
+              emailRedirectTo: window.location.origin + window.location.pathname
+            }
+          });
     setBusy(false);
     if (error) {
       setErr(mapAuthError(error.message));
     } else if (mode === "signup") {
-      setInfo("注册成功！若站点开启了邮箱验证，请先查收验证邮件再登录");
+      setInfo("注册成功！请查收验证邮件，点击邮件里的链接完成验证后再登录");
     } else {
       onClose();
     }

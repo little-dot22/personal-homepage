@@ -8,5 +8,11 @@ export const supabaseConfigured = Boolean(
 );
 
 export const supabase: SupabaseClient | null = supabaseConfigured
-  ? createClient(url as string, anonKey as string)
+  ? createClient(url as string, anonKey as string, {
+      auth: {
+        flowType: "pkce",
+        detectSessionInUrl: true,
+        persistSession: true
+      }
+    })
   : null;

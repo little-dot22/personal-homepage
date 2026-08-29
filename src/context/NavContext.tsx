@@ -7,9 +7,9 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { label: "记忆碎片", path: "/memories", color: "#FF9A62" },
-  { label: "无用之用", path: "/uselessness", color: "#00FF9D" },
-  { label: "赛博鱼缸", path: "/fishtank", color: "#00F0FF" }
+  { label: "记忆碎片", path: "/memories", color: "#E8A87C" },
+  { label: "无用之用", path: "/uselessness", color: "#A855F7" },
+  { label: "赛博鱼缸", path: "/fishtank", color: "#40E0D0" }
 ];
 
 interface NavContextValue {

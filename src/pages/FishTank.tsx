@@ -130,22 +130,13 @@ export default function FishTankPage() {
         {userId ? (
           <>
             {myFish ? (
-              <>
-                <button
-                  type="button"
-                  className="hud-btn"
-                  onClick={() => setShowPanel(true)}
-                >
-                  我的鱼
-                </button>
-                <button
-                  type="button"
-                  className="hud-btn"
-                  onClick={() => void supabase!.auth.signOut()}
-                >
-                  退出
-                </button>
-              </>
+              <button
+                type="button"
+                className="hud-btn"
+                onClick={() => setShowPanel(true)}
+              >
+                我的鱼
+              </button>
             ) : fish.length >= 50 ? (
               <span className="hud-chip warn">鱼缸已满，只能围观</span>
             ) : (
@@ -157,6 +148,13 @@ export default function FishTankPage() {
                 领养一条鱼
               </button>
             )}
+            <button
+              type="button"
+              className="hud-btn"
+              onClick={() => void supabase!.auth.signOut()}
+            >
+              退出
+            </button>
           </>
         ) : (
           <button

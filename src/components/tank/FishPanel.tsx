@@ -8,11 +8,13 @@ import AppearanceEditor from "./AppearanceEditor";
 export default function FishPanel({
   fish,
   onClose,
-  onSaved
+  onSaved,
+  onRelease
 }: {
   fish: FishRow;
   onClose: () => void;
   onSaved: (msg: string) => void;
+  onRelease: () => void;
 }) {
   const [tab, setTab] = useState<"appearance" | "statements" | "status">(
     fish.level > 0 ? "status" : "appearance"
@@ -34,6 +36,26 @@ export default function FishPanel({
   });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [confirmRelease, setConfirmRelease] = useState(false);
+
+  const doRelease = async () => {
+    if (!supabase) return;
+    setBusy(true);
+    setErr(null);
+    const { error } = await supabase.rpc("release_fish", {
+      p_fish_id: fish.id
+    });
+    setBusy(false);
+    if (error) {
+      setErr(
+        error.message.includes("not your fish")
+          ? "只能放生自己的鱼"
+          : error.message
+      );
+      return;
+    }
+    onRelease();
+  };
 
   useEffect(() => {
     setStatements((prev) => {
@@ -201,6 +223,41 @@ export default function FishPanel({
             )}
           </div>
         )}
+
+        <div className="release-block">
+          {!confirmRelease ? (
+            <button
+              type="button"
+              className="btn-danger"
+              onClick={() => setConfirmRelease(true)}
+            >
+              放生这条鱼
+            </button>
+          ) : (
+            <div className="release-confirm">
+              <p className="release-warn">
+                确认放生？这条鱼会永久消失，等级、语句、外观全部清空；放生后可以重新领养（从 0 级开始），并恢复今天的投喂机会。
+              </p>
+              <div className="release-actions">
+                <button
+                  type="button"
+                  className="btn-danger"
+                  disabled={busy}
+                  onClick={() => void doRelease()}
+                >
+                  {busy ? "放生中…" : "确认放生"}
+                </button>
+                <button
+                  type="button"
+                  className="opt-btn"
+                  onClick={() => setConfirmRelease(false)}
+                >
+                  取消
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>,
     document.body

@@ -170,5 +170,30 @@ grant execute on function public.throw_food() to anon, authenticated;
 grant execute on function public.feed_fish(uuid) to anon, authenticated;
 grant execute on function public.adopt_fish(text, text, text, text, text, text, text, text) to anon, authenticated;
 
+-- ---------- RPC：放生（删除自己的鱼 + 恢复当天投喂机会） ----------
+create or replace function public.release_fish(p_fish_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null then
+    raise exception 'not authenticated';
+  end if;
+  if not exists (
+    select 1 from public.fish where id = p_fish_id and owner_id = auth.uid()
+  ) then
+    raise exception 'not your fish';
+  end if;
+  delete from public.feedings
+  where feeder_id = auth.uid()
+    and created_at >= (date_trunc('day', (now() at time zone 'Asia/Shanghai')) at time zone 'Asia/Shanghai');
+  delete from public.fish where id = p_fish_id;
+end;
+$$;
+
+grant execute on function public.release_fish(uuid) to anon, authenticated;
+
 -- ---------- 开启 fish 表实时订阅 ----------
 alter publication supabase_realtime add table public.fish;

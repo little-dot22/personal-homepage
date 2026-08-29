@@ -215,6 +215,11 @@ export default function FishTankPage() {
           fish={myFish}
           onClose={() => setShowPanel(false)}
           onSaved={handleSaved}
+          onRelease={() => {
+            setShowPanel(false);
+            showToast("小鱼已放生，可以重新领养了");
+            void refreshFedToday();
+          }}
         />
       )}
     </div>

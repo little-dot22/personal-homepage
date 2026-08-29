@@ -759,3 +759,46 @@ body::before {
     letter-spacing: 0.12em;
   }
 }
+
+/* 放生 */
+.release-block {
+  margin-top: 26px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.btn-danger {
+  padding: 9px 20px;
+  border: 1px solid rgba(255, 107, 107, 0.5);
+  border-radius: 999px;
+  background: transparent;
+  color: #ff6b6b;
+  font-family: inherit;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.btn-danger:hover {
+  background: rgba(255, 107, 107, 0.12);
+  box-shadow: 0 0 14px rgba(255, 107, 107, 0.25);
+}
+
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.release-warn {
+  color: var(--dim);
+  font-size: 13px;
+  line-height: 1.8;
+  margin-bottom: 12px;
+}
+
+.release-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}

@@ -9,9 +9,13 @@ import { NAV_ITEMS, useNav } from "../context/NavContext";
 
 const RADIUS = 380;
 
-interface SphereItem {
+const LONGITUDES = [0, (Math.PI * 2) / 3, (Math.PI * 4) / 3];
+const LATITUDES = [0.55, -0.3, 0.18];
+
+interface SphereEntry {
   obj: CSS3DObject;
-  azimuth: number;
+  label: HTMLElement;
+  dir: THREE.Vector3;
   depth: number;
 }
 
@@ -42,16 +46,9 @@ export default function TitleSphere() {
     renderer.setSize(container.clientWidth, container.clientHeight);
     container.appendChild(renderer.domElement);
 
-    const group = new THREE.Group();
-    group.rotation.x = -0.16;
-    group.rotation.y = Math.PI;
-    scene.add(group);
-
-    const items: SphereItem[] = [];
+    const entries: SphereEntry[] = [];
 
     NAV_ITEMS.forEach((item, i) => {
-      const azimuth = (i * Math.PI * 2) / 3;
-
       const host = document.createElement("div");
       host.className = "sphere-host";
 
@@ -62,25 +59,75 @@ export default function TitleSphere() {
 
       host.appendChild(label);
       const obj = new CSS3DObject(host);
-      obj.position.set(
-        Math.sin(azimuth) * RADIUS,
-        0,
-        -Math.cos(azimuth) * RADIUS
-      );
-      group.add(obj);
 
-      const entry: SphereItem = { obj, azimuth, depth: 0 };
-      items.push(entry);
+      const lon = LONGITUDES[i];
+      const lat = LATITUDES[i];
+      const dir = new THREE.Vector3(
+        Math.cos(lat) * Math.sin(lon),
+        Math.sin(lat),
+        Math.cos(lat) * Math.cos(lon)
+      );
+      scene.add(obj);
+
+      const entry: SphereEntry = { obj, label, dir, depth: 0 };
+      entries.push(entry);
 
       label.addEventListener("click", () => {
         if (entry.depth < 0.45) navigate(item.path);
       });
     });
 
-    let angle = Math.PI;
+    const Y_AXIS = new THREE.Vector3(0, 1, 0);
+    const X_AXIS = new THREE.Vector3(1, 0, 0);
+    const quat = new THREE.Quaternion();
+    const qYaw = new THREE.Quaternion();
+    const qPitch = new THREE.Quaternion();
+    const pos = new THREE.Vector3();
+
+    const place = (theta: number, phi: number) => {
+      qYaw.setFromAxisAngle(Y_AXIS, theta);
+      qPitch.setFromAxisAngle(X_AXIS, phi);
+      quat.copy(qYaw).multiply(qPitch);
+      for (const entry of entries) {
+        pos.copy(entry.dir).applyQuaternion(quat).multiplyScalar(RADIUS);
+        entry.obj.position.copy(pos);
+        entry.obj.quaternion.identity();
+      }
+    };
+
+    const applyStyles = (snap: boolean) => {
+      for (const entry of entries) {
+        const z = entry.obj.position.z;
+        const t = THREE.MathUtils.clamp((RADIUS - z) / (RADIUS * 2), 0, 1);
+        entry.depth = snap ? t : entry.depth + (t - entry.depth) * 0.25;
+        const s = entry.depth;
+
+        const opacity = (1 - s * 0.88).toFixed(2);
+        if (entry.label.style.opacity !== opacity) {
+          entry.label.style.opacity = opacity;
+        }
+        const blur = (Math.round(s * 16) / 2).toFixed(1);
+        if (entry.label.style.filter !== `blur(${blur}px)`) {
+          entry.label.style.filter = `blur(${blur}px)`;
+        }
+        const scale = (1 + (1 - s) * 0.24).toFixed(3);
+        if (entry.label.style.transform !== `scale(${scale})`) {
+          entry.label.style.transform = `scale(${scale})`;
+        }
+        const pe = s < 0.45 ? "auto" : "none";
+        if (entry.obj.element.style.pointerEvents !== pe) {
+          entry.obj.element.style.pointerEvents = pe;
+        }
+      }
+    };
+
+    let theta = 0;
+    let phi = 0;
     let raf = 0;
     const clock = new THREE.Clock();
-    const worldPos = new THREE.Vector3();
+
+    place(0, 0);
+    applyStyles(true);
 
     const onResize = () => {
       camera.aspect = container.clientWidth / container.clientHeight;
@@ -91,41 +138,21 @@ export default function TitleSphere() {
 
     const animate = () => {
       raf = requestAnimationFrame(animate);
-      const dt = clock.getDelta();
+      const dt = Math.min(clock.getDelta(), 0.05);
       const current = hoveredRef.current;
 
       if (current !== null) {
-        const desired = Math.PI - items[current].azimuth;
-        let delta = desired - angle;
+        let delta = -LONGITUDES[current] - theta;
         delta = ((delta + Math.PI) % (Math.PI * 2)) - Math.PI;
-        if (Math.abs(delta) > 0.006) {
-          angle += delta * 0.09;
-        } else {
-          angle += dt * 0.12;
-        }
+        theta += delta * 0.09;
+        phi += (LATITUDES[current] - phi) * 0.08;
       } else {
-        angle += dt * 0.28;
+        theta += dt * 0.28;
+        phi += (0 - phi) * 0.03;
       }
 
-      group.rotation.y = angle;
-      scene.updateMatrixWorld();
-
-      for (const entry of items) {
-        entry.obj.getWorldPosition(worldPos);
-        const t = THREE.MathUtils.clamp(
-          (RADIUS - worldPos.z) / (RADIUS * 2),
-          0,
-          1
-        );
-        entry.depth = t;
-
-        const label = entry.obj.element.firstElementChild as HTMLElement;
-        label.style.opacity = String(1 - t * 0.88);
-        label.style.filter = `blur(${(t * 7).toFixed(2)}px)`;
-        label.style.transform = `scale(${(1 + (1 - t) * 0.24).toFixed(3)})`;
-        entry.obj.element.style.pointerEvents = t < 0.45 ? "auto" : "none";
-      }
-
+      place(theta, phi);
+      applyStyles(false);
       renderer.render(scene, camera);
     };
     animate();

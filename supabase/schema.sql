@@ -25,20 +25,8 @@ create table if not exists public.fish (
   updated_at timestamptz not null default now()
 );
 
--- ---------- 投喂记录 ----------
-create table if not exists public.feedings (
-  id uuid primary key default gen_random_uuid(),
-  feeder_id uuid not null references auth.users (id) on delete cascade,
-  fish_id uuid not null references public.fish (id) on delete cascade,
-  created_at timestamptz not null default now()
-);
-
-create index if not exists idx_feedings_feeder_day
-  on public.feedings (feeder_id, created_at desc);
-
 -- ---------- RLS ----------
 alter table public.fish enable row level security;
-alter table public.feedings enable row level security;
 
 drop policy if exists "fish_read_all" on public.fish;
 create policy "fish_read_all" on public.fish
@@ -55,14 +43,6 @@ create policy "fish_update_owner" on public.fish
 drop policy if exists "fish_delete_owner" on public.fish;
 create policy "fish_delete_owner" on public.fish
   for delete using (auth.uid() = owner_id);
-
-drop policy if exists "feedings_read_all" on public.feedings;
-create policy "feedings_read_all" on public.feedings
-  for select using (true);
-
-drop policy if exists "feedings_insert_self" on public.feedings;
-create policy "feedings_insert_self" on public.feedings
-  for insert with check (auth.uid() = feeder_id);
 
 -- ---------- RPC：领养（限每人 1 条 / 鱼缸上限 50 条） ----------
 create or replace function public.adopt_fish(
@@ -130,8 +110,6 @@ begin
     v_leveled := true;
   end if;
 
-  insert into public.feedings (feeder_id, fish_id) values (auth.uid(), p_fish_id);
-
   update public.fish f
   set feed_count = f.feed_count + 1,
       level = v_new_level,
@@ -162,9 +140,6 @@ begin
   ) then
     raise exception 'not your fish';
   end if;
-  delete from public.feedings
-  where feeder_id = auth.uid()
-    and created_at >= (date_trunc('day', (now() at time zone 'Asia/Shanghai')) at time zone 'Asia/Shanghai');
   delete from public.fish where id = p_fish_id;
 end;
 $$;

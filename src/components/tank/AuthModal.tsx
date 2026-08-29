@@ -4,6 +4,7 @@ import { supabase } from "../../lib/supabase";
 function mapAuthError(msg: string): string {
   if (msg.includes("Invalid login credentials")) return "邮箱或密码错误";
   if (msg.includes("User already registered")) return "该邮箱已注册，请直接登录";
+  if (msg.includes("Email signups are disabled")) return "站点尚未开启邮箱注册，请联系站长";
   if (msg.includes("at least 6 characters")) return "密码至少 6 位";
   if (msg.includes("valid email")) return "邮箱格式不正确";
   if (msg.includes("rate limit")) return "尝试太频繁，请稍后再试";
@@ -14,6 +15,7 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [err, setErr] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -24,6 +26,14 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
     setInfo(null);
     if (!email.trim() || !password) {
       setErr("请输入邮箱和密码");
+      return;
+    }
+    if (mode === "signup" && password.length < 6) {
+      setErr("密码至少 6 位");
+      return;
+    }
+    if (mode === "signup" && password !== confirm) {
+      setErr("两次输入的密码不一致");
       return;
     }
     setBusy(true);
@@ -88,6 +98,21 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
           }}
           placeholder="••••••••"
         />
+        {mode === "signup" && (
+          <>
+            <label className="field-label">确认密码</label>
+            <input
+              className="text-input"
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void submit();
+              }}
+              placeholder="再次输入密码"
+            />
+          </>
+        )}
         {err && <p className="form-err">{err}</p>}
         {info && <p className="form-info">{info}</p>}
         <button className="btn-primary" disabled={busy} onClick={() => void submit()}>

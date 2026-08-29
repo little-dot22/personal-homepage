@@ -7,6 +7,7 @@ function mapAuthError(msg: string): string {
   if (msg.includes("User already registered")) return "该邮箱已注册，请直接登录";
   if (msg.includes("Email signups are disabled")) return "站点尚未开启邮箱注册，请联系站长";
   if (msg.includes("Email not confirmed")) return "邮箱尚未验证，请先点击验证邮件里的链接";
+  if (msg.includes("Email rate limit exceeded")) return "发送太频繁，请过 1 小时后再试";
   if (msg.includes("Token has expired or is invalid")) return "验证链接已失效，请重新注册";
   if (msg.includes("at least 6 characters")) return "密码至少 6 位";
   if (msg.includes("valid email")) return "邮箱格式不正确";
@@ -22,6 +23,7 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
   const [err, setErr] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [resendBusy, setResendBusy] = useState(false);
 
   const submit = async () => {
     if (!supabase) return;
@@ -40,24 +42,52 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
       return;
     }
     setBusy(true);
-    const { error } =
-      mode === "login"
-        ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
-        : await supabase.auth.signUp({
-            email: email.trim(),
-            password,
-            options: {
-              emailRedirectTo: window.location.origin + window.location.pathname
-            }
-          });
-    setBusy(false);
-    if (error) {
-      setErr(mapAuthError(error.message));
-    } else if (mode === "signup") {
-      setInfo("注册成功！请查收验证邮件，点击邮件里的链接完成验证后再登录");
+    if (mode === "login") {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password
+      });
+      setBusy(false);
+      if (error) {
+        setErr(mapAuthError(error.message));
+      } else {
+        onClose();
+      }
     } else {
-      onClose();
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          emailRedirectTo: window.location.origin + window.location.pathname
+        }
+      });
+      setBusy(false);
+      if (error) {
+        setErr(mapAuthError(error.message));
+      } else if (data.session) {
+        onClose();
+      } else {
+        setInfo(
+          "注册成功！验证邮件已发送（请检查垃圾邮件箱）。点击邮件里的链接完成验证后即可登录。"
+        );
+      }
     }
+  };
+
+  const resend = async () => {
+    if (!supabase) return;
+    setResendBusy(true);
+    setErr(null);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: email.trim(),
+      options: {
+        emailRedirectTo: window.location.origin + window.location.pathname
+      }
+    });
+    setResendBusy(false);
+    if (error) setErr(mapAuthError(error.message));
+    else setInfo("验证邮件已重新发送，请查收（含垃圾邮件箱）");
   };
 
   return createPortal(
@@ -124,6 +154,16 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
         )}
         {err && <p className="form-err">{err}</p>}
         {info && <p className="form-info">{info}</p>}
+        {mode === "signup" && info && (
+          <button
+            type="button"
+            className="btn-resend"
+            disabled={resendBusy}
+            onClick={() => void resend()}
+          >
+            {resendBusy ? "发送中…" : "重新发送验证邮件"}
+          </button>
+        )}
         <button className="btn-primary" disabled={busy} onClick={() => void submit()}>
           {busy ? "请稍候…" : mode === "login" ? "登录" : "注册并登录"}
         </button>

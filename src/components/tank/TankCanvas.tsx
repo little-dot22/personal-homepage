@@ -34,6 +34,7 @@ interface Food {
   vy: number;
   age: number;
   state: "falling" | "rest" | "gone";
+  feederId: string | null;
 }
 
 export interface EatPayload {
@@ -55,6 +56,7 @@ interface Props {
   fish: FishRow[];
   userId: string | null;
   onEat: (p: EatPayload) => void;
+  onAnnounce: (msg: string) => void;
   onActionBlocked: (msg: string) => void;
 }
 
@@ -63,6 +65,21 @@ const dist = (a: { x: number; y: number }, b: { x: number; y: number }) =>
 
 const clamp = (v: number, lo: number, hi: number) =>
   Math.max(lo, Math.min(hi, v));
+
+const mapFeedError = (msg: string): string => {
+  if (
+    msg.includes("not authenticated") ||
+    msg.includes("JWT expired") ||
+    msg.includes("invalid JWT") ||
+    msg.includes("AuthApiError")
+  ) {
+    return "登录已过期，请重新登录后再投喂";
+  }
+  if (msg.includes("fish not found")) {
+    return "这条鱼已被放生，鱼食落空了";
+  }
+  return "投喂结算失败，请稍后再试";
+};
 
 const appOf = (row: FishRow): FishAppearance => ({
   name: row.name,
@@ -102,6 +119,7 @@ export default function TankCanvas({
   fish,
   userId,
   onEat,
+  onAnnounce,
   onActionBlocked
 }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -113,6 +131,8 @@ export default function TankCanvas({
   const channelRef = useRef<RealtimeChannel | null>(null);
   const bubblesRef = useRef<Bubble[]>([]);
   const bubbleElsRef = useRef<Map<string, HTMLDivElement>>(new Map());
+  const settledFoodIdsRef = useRef<Set<string>>(new Set());
+  const myFoodIdsRef = useRef<Set<string>>(new Set());
   const [bubbles, setBubbles] = useState<Bubble[]>([]);
 
   const fishRef = useRef(fish);
@@ -121,6 +141,8 @@ export default function TankCanvas({
   userIdRef.current = userId;
   const onEatRef = useRef(onEat);
   onEatRef.current = onEat;
+  const onAnnounceRef = useRef(onAnnounce);
+  onAnnounceRef.current = onAnnounce;
   const onActionBlockedRef = useRef(onActionBlocked);
   onActionBlockedRef.current = onActionBlocked;
 
@@ -179,7 +201,12 @@ export default function TankCanvas({
     channelRef.current = channel;
     channel
       .on("broadcast", { event: "food" }, (msg) => {
-        const p = msg.payload as { id?: string; x?: number; y?: number };
+        const p = msg.payload as {
+          id?: string;
+          x?: number;
+          y?: number;
+          feederId?: string | null;
+        };
         if (p && p.id && typeof p.x === "number" && typeof p.y === "number") {
           foodRef.current.push({
             id: p.id,
@@ -187,13 +214,34 @@ export default function TankCanvas({
             y: p.y,
             vy: 0,
             age: 0,
-            state: "falling"
+            state: "falling",
+            feederId: p.feederId ?? null
           });
         }
       })
       .on("broadcast", { event: "ate" }, (msg) => {
-        const p = msg.payload as { fishId?: string; foodId?: string };
-        if (p && p.fishId) resolveEat(p.fishId, p.foodId ?? null);
+        const p = msg.payload as {
+          fishId?: string;
+          foodId?: string;
+          level?: number;
+          leveledUp?: boolean;
+        };
+        if (!p || !p.fishId) return;
+        const foodKey = p.foodId ?? "";
+        if (settledFoodIdsRef.current.has(foodKey)) return;
+        settledFoodIdsRef.current.add(foodKey);
+        resolveEat(p.fishId, p.foodId ?? null);
+        const isMine = Boolean(p.foodId) && myFoodIdsRef.current.has(p.foodId!);
+        myFoodIdsRef.current.delete(p.foodId ?? "");
+        if (!isMine) {
+          const row = simRef.current.get(p.fishId)?.row;
+          const name = row?.name ?? "一条鱼";
+          onAnnounceRef.current(
+            p.leveledUp
+              ? `${name} 抢到了鱼食，升到 Lv.${p.level}！`
+              : `${name} 抢到了鱼食！`
+          );
+        }
       })
       .subscribe();
     return () => {
@@ -338,33 +386,47 @@ export default function TankCanvas({
             (s.state === "toFood" || s.state === "orbit") && dist(s, f) < 42
         );
         if (arrived.length > 0) {
-          const winner = arrived[Math.floor(Math.random() * arrived.length)];
-          const winnerId = winner.row.id;
-          resolveEat(winnerId, f.id);
-          broadcast("ate", { fishId: winnerId, foodId: f.id });
-          void (async () => {
-            const client = supabase;
-            if (!supabaseConfigured || !client) return;
-            const { data, error } = await client.rpc("feed_fish", {
-              p_fish_id: winnerId
-            });
-            if (error) {
-              onActionBlockedRef.current("投喂结算失败，请稍后再试");
-              return;
-            }
-            const r = data[0] as {
-              fish_id: string;
-              feed_count: number;
-              level: number;
-              leveled_up: boolean;
-            };
-            onEatRef.current({
-              fishId: r.fish_id,
-              feedCount: r.feed_count,
-              level: r.level,
-              leveledUp: r.leveled_up
-            });
-          })();
+          // 只有投喂者本人的客户端结算，防止多端重复结算
+          if (
+            f.feederId &&
+            f.feederId === userIdRef.current &&
+            !settledFoodIdsRef.current.has(f.id)
+          ) {
+            settledFoodIdsRef.current.add(f.id);
+            myFoodIdsRef.current.delete(f.id);
+            const winner = arrived[Math.floor(Math.random() * arrived.length)];
+            const winnerId = winner.row.id;
+            resolveEat(winnerId, f.id);
+            void (async () => {
+              const client = supabase;
+              if (!supabaseConfigured || !client) return;
+              const { data, error } = await client.rpc("feed_fish", {
+                p_fish_id: winnerId
+              });
+              if (error) {
+                onActionBlockedRef.current(mapFeedError(error.message));
+                return;
+              }
+              const r = data[0] as {
+                fish_id: string;
+                feed_count: number;
+                level: number;
+                leveled_up: boolean;
+              };
+              broadcast("ate", {
+                fishId: r.fish_id,
+                foodId: f.id,
+                level: r.level,
+                leveledUp: r.leveled_up
+              });
+              onEatRef.current({
+                fishId: r.fish_id,
+                feedCount: r.feed_count,
+                level: r.level,
+                leveledUp: r.leveled_up
+              });
+            })();
+          }
         } else if (f.age > 120) {
           f.state = "gone";
         }
@@ -584,8 +646,18 @@ export default function TankCanvas({
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     const id = crypto.randomUUID();
-    foodRef.current.push({ id, x, y, vy: 0, age: 0, state: "falling" });
-    broadcast("food", { id, x, y });
+    const feederId = userIdRef.current;
+    foodRef.current.push({
+      id,
+      x,
+      y,
+      vy: 0,
+      age: 0,
+      state: "falling",
+      feederId
+    });
+    myFoodIdsRef.current.add(id);
+    broadcast("food", { id, x, y, feederId });
   };
 
   const handleMouseMove = (e: MouseEvent<HTMLCanvasElement>) => {

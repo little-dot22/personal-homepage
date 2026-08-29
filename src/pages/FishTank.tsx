@@ -116,6 +116,7 @@ export default function FishTankPage() {
         fish={fish}
         userId={userId}
         onEat={handleEat}
+        onAnnounce={showToast}
         onActionBlocked={showToast}
       />
 

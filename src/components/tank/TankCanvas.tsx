@@ -56,6 +56,7 @@ interface Props {
   userId: string | null;
   canFeed: boolean;
   onEat: (p: EatPayload) => void;
+  onFedToday: () => void;
   onActionBlocked: (msg: string) => void;
 }
 
@@ -104,6 +105,7 @@ export default function TankCanvas({
   userId,
   canFeed,
   onEat,
+  onFedToday,
   onActionBlocked
 }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -123,6 +125,8 @@ export default function TankCanvas({
   userIdRef.current = userId;
   const onEatRef = useRef(onEat);
   onEatRef.current = onEat;
+  const onFedTodayRef = useRef(onFedToday);
+  onFedTodayRef.current = onFedToday;
   const onActionBlockedRef = useRef(onActionBlocked);
   onActionBlockedRef.current = onActionBlocked;
 
@@ -320,7 +324,7 @@ export default function TankCanvas({
       for (const f of foodRef.current) {
         f.age += dt;
         if (f.state === "falling") {
-          f.vy += 260 * dt;
+          f.vy = Math.min(70, f.vy + 55 * dt);
           f.y += f.vy * dt;
           if (f.y >= H - 38) {
             f.y = H - 38;
@@ -346,11 +350,7 @@ export default function TankCanvas({
               p_fish_id: winnerId
             });
             if (error) {
-              onActionBlockedRef.current(
-                error.message.includes("already fed today")
-                  ? "今天已经投喂过啦，明天再来吧"
-                  : "投喂失败，请稍后再试"
-              );
+              onActionBlockedRef.current("投喂结算失败，请稍后再试");
               return;
             }
             const r = data[0] as {
@@ -366,7 +366,7 @@ export default function TankCanvas({
               leveledUp: r.leveled_up
             });
           })();
-        } else if (f.age > 5) {
+        } else if (f.age > 120) {
           f.state = "gone";
         }
       }
@@ -543,7 +543,7 @@ export default function TankCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleClick = (e: MouseEvent<HTMLCanvasElement>) => {
+  const handleClick = async (e: MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     if (!userIdRef.current) {
@@ -554,6 +554,18 @@ export default function TankCanvas({
       onActionBlockedRef.current("今天已经投喂过啦，明天再来吧");
       return;
     }
+    const client = supabase;
+    if (!supabaseConfigured || !client) return;
+    const { error } = await client.rpc("throw_food");
+    if (error) {
+      onActionBlockedRef.current(
+        error.message.includes("already fed today")
+          ? "今天已经投喂过啦，明天再来吧"
+          : "投喂失败，请稍后再试"
+      );
+      return;
+    }
+    onFedTodayRef.current();
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;

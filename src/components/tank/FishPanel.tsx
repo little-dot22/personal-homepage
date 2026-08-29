@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { feedsForLevel, MAX_LEVEL, nextLevelFeeds } from "../../lib/level";
 import { supabase } from "../../lib/supabase";
 import type { FishAppearance, FishRow } from "../../lib/types";
@@ -91,7 +92,7 @@ export default function FishPanel({
             100
         );
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal modal-wide" onClick={(e) => e.stopPropagation()}>
         <h2 className="modal-title">我的鱼 · {fish.name}</h2>
@@ -201,6 +202,7 @@ export default function FishPanel({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

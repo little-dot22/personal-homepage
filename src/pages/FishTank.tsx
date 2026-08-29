@@ -103,9 +103,8 @@ export default function FishTankPage() {
           ? `${name} 抢到了鱼食，升到 Lv.${p.level}！`
           : `${name} 抢到了鱼食！`
       );
-      void refreshFedToday();
     },
-    [fish, showToast, refreshFedToday]
+    [fish, showToast]
   );
 
   const handleSaved = useCallback(
@@ -137,6 +136,7 @@ export default function FishTankPage() {
         userId={userId}
         canFeed={Boolean(userId) && !fedToday}
         onEat={handleEat}
+        onFedToday={() => void refreshFedToday()}
         onActionBlocked={showToast}
       />
 
@@ -194,7 +194,9 @@ export default function FishTankPage() {
         )}
       </div>
 
-      <p className="tank-tip">点击水面任意位置投喂（每天 1 次）· 鱼食可能被别人的鱼抢走</p>
+      <p className="tank-tip">
+        点击水面投喂 · 每天仅 1 次（点击即计） · 鱼食 2 分钟无人吃会消失
+      </p>
 
       {toast && <div className="tank-toast">{toast}</div>}
 

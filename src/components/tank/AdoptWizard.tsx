@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "../../lib/supabase";
 import type { FishAppearance } from "../../lib/types";
 import AppearanceEditor from "./AppearanceEditor";
@@ -52,7 +53,7 @@ export default function AdoptWizard({
     onDone();
   };
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal modal-wide" onClick={(e) => e.stopPropagation()}>
         <h2 className="modal-title">领养你的鱼</h2>
@@ -63,6 +64,7 @@ export default function AdoptWizard({
           {busy ? "投放中…" : "投放进鱼缸"}
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

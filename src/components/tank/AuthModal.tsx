@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "../../lib/supabase";
 
 function mapAuthError(msg: string): string {
@@ -51,7 +52,7 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
     }
   };
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <h2 className="modal-title">
@@ -119,6 +120,7 @@ export default function AuthModal({ onClose }: { onClose: () => void }) {
           {busy ? "请稍候…" : mode === "login" ? "登录" : "注册并登录"}
         </button>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

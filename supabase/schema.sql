@@ -24,11 +24,11 @@ create table if not exists public.fish (
   updated_at timestamptz not null default now()
 );
 
--- ---------- 投喂记录（用于“每天一次”判定） ----------
+-- ---------- 投喂记录（用于“每天一次”判定；fish_id 为空 = 已投出、未被吃） ----------
 create table if not exists public.feedings (
   id uuid primary key default gen_random_uuid(),
   feeder_id uuid not null references auth.users (id) on delete cascade,
-  fish_id uuid not null references public.fish (id) on delete cascade,
+  fish_id uuid references public.fish (id) on delete cascade,
   created_at timestamptz not null default now()
 );
 
@@ -98,16 +98,13 @@ begin
 end;
 $$;
 
--- ---------- RPC：投喂（服务端校验每日一次 + 自动升级） ----------
-create or replace function public.feed_fish(p_fish_id uuid)
-returns table (fish_id uuid, feed_count int, level int, leveled_up boolean)
+-- ---------- RPC：投出鱼食（点击即消耗每天一次机会） ----------
+create or replace function public.throw_food()
+returns void
 language plpgsql
 security definer
 set search_path = public
 as $$
-declare
-  v_fish public.fish;
-  v_level int;
 begin
   if auth.uid() is null then
     raise exception 'not authenticated';
@@ -119,13 +116,43 @@ begin
   ) then
     raise exception 'already fed today';
   end if;
+  insert into public.feedings (feeder_id, fish_id) values (auth.uid(), null);
+end;
+$$;
+
+-- ---------- RPC：鱼食被吃（绑定投喂者今天投出的鱼食 + 升级） ----------
+create or replace function public.feed_fish(p_fish_id uuid)
+returns table (fish_id uuid, feed_count int, level int, leveled_up boolean)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_fish public.fish;
+  v_level int;
+  v_pending public.feedings;
+begin
+  if auth.uid() is null then
+    raise exception 'not authenticated';
+  end if;
+
+  select * into v_pending
+  from public.feedings f
+  where f.feeder_id = auth.uid()
+    and f.fish_id is null
+    and f.created_at >= (date_trunc('day', (now() at time zone 'Asia/Shanghai')) at time zone 'Asia/Shanghai')
+  order by f.created_at desc
+  limit 1;
+  if v_pending is null then
+    raise exception 'no food thrown today';
+  end if;
 
   select * into v_fish from public.fish where id = p_fish_id;
   if v_fish is null then
     raise exception 'fish not found';
   end if;
 
-  insert into public.feedings (feeder_id, fish_id) values (auth.uid(), p_fish_id);
+  update public.feedings set fish_id = p_fish_id where id = v_pending.id;
 
   v_fish.feed_count := v_fish.feed_count + 1;
   -- 累计 n(n+1)/2 次投喂 = n 级，最高 10 级
@@ -138,6 +165,10 @@ begin
   return query select v_fish.id, v_fish.feed_count, v_level, v_level > v_fish.level;
 end;
 $$;
+
+grant execute on function public.throw_food() to anon, authenticated;
+grant execute on function public.feed_fish(uuid) to anon, authenticated;
+grant execute on function public.adopt_fish(text, text, text, text, text, text, text, text) to anon, authenticated;
 
 -- ---------- 开启 fish 表实时订阅 ----------
 alter publication supabase_realtime add table public.fish;

@@ -18,6 +18,7 @@ export interface FishRow {
   statements: string[];
   level: number;
   feed_count: number;
+  last_levelup_date?: string | null;
   created_at: string;
   updated_at?: string;
 }

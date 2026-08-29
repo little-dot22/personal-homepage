@@ -54,9 +54,7 @@ interface Bubble {
 interface Props {
   fish: FishRow[];
   userId: string | null;
-  canFeed: boolean;
   onEat: (p: EatPayload) => void;
-  onFedToday: () => void;
   onActionBlocked: (msg: string) => void;
 }
 
@@ -78,7 +76,7 @@ const appOf = (row: FishRow): FishAppearance => ({
 });
 
 const fishSize = (row: FishRow) =>
-  42 * (1 + Math.min(row.feed_count, 40) * 0.012);
+  42 * (1 + Math.min(row.level, 100) * 0.0035);
 
 const spawnFish = (row: FishRow, w: number, h: number): SimFish => ({
   row,
@@ -103,13 +101,13 @@ const spawnFish = (row: FishRow, w: number, h: number): SimFish => ({
 export default function TankCanvas({
   fish,
   userId,
-  canFeed,
   onEat,
-  onFedToday,
   onActionBlocked
 }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const mouseRef = useRef({ x: 0, y: 0, active: false });
   const simRef = useRef<Map<string, SimFish>>(new Map());
   const foodRef = useRef<Food[]>([]);
   const channelRef = useRef<RealtimeChannel | null>(null);
@@ -119,14 +117,10 @@ export default function TankCanvas({
 
   const fishRef = useRef(fish);
   fishRef.current = fish;
-  const canFeedRef = useRef(canFeed);
-  canFeedRef.current = canFeed;
   const userIdRef = useRef(userId);
   userIdRef.current = userId;
   const onEatRef = useRef(onEat);
   onEatRef.current = onEat;
-  const onFedTodayRef = useRef(onFedToday);
-  onFedTodayRef.current = onFedToday;
   const onActionBlockedRef = useRef(onActionBlocked);
   onActionBlockedRef.current = onActionBlocked;
 
@@ -150,7 +144,7 @@ export default function TankCanvas({
     }
   };
 
-  // 同步鱼列表 → 模拟对象
+  // 同步鱼列表 → 模拟对象；删除的鱼连说话气泡一起移除
   useEffect(() => {
     const wrap = wrapRef.current;
     const sim = simRef.current;
@@ -169,6 +163,11 @@ export default function TankCanvas({
           spawnFish(row, wrap?.clientWidth ?? 900, wrap?.clientHeight ?? 600)
         );
       }
+    }
+    const remaining = bubblesRef.current.filter((b) => ids.has(b.fishId));
+    if (remaining.length !== bubblesRef.current.length) {
+      bubblesRef.current = remaining;
+      setBubbles(remaining);
     }
   }, [fish]);
 
@@ -487,10 +486,40 @@ export default function TankCanvas({
       for (const b of bubblesRef.current) {
         const el = bubbleElsRef.current.get(b.key);
         const f = simRef.current.get(b.fishId);
-        if (!el || !f) continue;
+        if (!el) continue;
+        if (!f) {
+          el.style.display = "none";
+          continue;
+        }
+        el.style.display = "";
         el.style.transform = `translate(${Math.round(f.x - 60)}px, ${Math.round(
           f.y - f.size * 0.9 - 46
         )}px)`;
+      }
+    };
+
+    const updateTooltip = () => {
+      const tip = tooltipRef.current;
+      if (!tip) return;
+      const mp = mouseRef.current;
+      let hovered: SimFish | null = null;
+      if (mp.active) {
+        for (const s of simRef.current.values()) {
+          if (Math.hypot(s.x - mp.x, s.y - mp.y) < s.size * 0.55 + 14) {
+            hovered = s;
+            break;
+          }
+        }
+      }
+      if (hovered) {
+        tip.textContent = `${hovered.row.name} · Lv.${hovered.row.level}`;
+        tip.style.color = hovered.row.color;
+        tip.style.display = "block";
+        tip.style.transform = `translate(${Math.round(hovered.x)}px, ${Math.round(
+          hovered.y - hovered.size * 0.9 - 30
+        )}px) translate(-50%, -100%)`;
+      } else {
+        tip.style.display = "none";
       }
     };
 
@@ -531,6 +560,7 @@ export default function TankCanvas({
       updateFood(dt);
       draw(t, dt);
       updateBubblePositions();
+      updateTooltip();
     };
     raf = requestAnimationFrame(loop);
 
@@ -543,29 +573,13 @@ export default function TankCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleClick = async (e: MouseEvent<HTMLCanvasElement>) => {
+  const handleClick = (e: MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     if (!userIdRef.current) {
       onActionBlockedRef.current("登录后即可投喂和养鱼");
       return;
     }
-    if (!canFeedRef.current) {
-      onActionBlockedRef.current("今天已经投喂过啦，明天再来吧");
-      return;
-    }
-    const client = supabase;
-    if (!supabaseConfigured || !client) return;
-    const { error } = await client.rpc("throw_food");
-    if (error) {
-      onActionBlockedRef.current(
-        error.message.includes("already fed today")
-          ? "今天已经投喂过啦，明天再来吧"
-          : "投喂失败，请稍后再试"
-      );
-      return;
-    }
-    onFedTodayRef.current();
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
@@ -574,9 +588,31 @@ export default function TankCanvas({
     broadcast("food", { id, x, y });
   };
 
+  const handleMouseMove = (e: MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    mouseRef.current = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+      active: true
+    };
+  };
+
+  const handleMouseLeave = () => {
+    mouseRef.current = { ...mouseRef.current, active: false };
+  };
+
   return (
     <div ref={wrapRef} className="tank-wrap">
-      <canvas ref={canvasRef} className="tank-canvas" onClick={handleClick} />
+      <canvas
+        ref={canvasRef}
+        className="tank-canvas"
+        onClick={handleClick}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+      />
+      <div ref={tooltipRef} className="fish-tooltip" />
       {bubbles.map((b) => (
         <div
           key={b.key}

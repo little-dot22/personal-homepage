@@ -6,14 +6,12 @@ import FishPanel from "../components/tank/FishPanel";
 import TankCanvas, {
   type EatPayload
 } from "../components/tank/TankCanvas";
-import { shanghaiDayStartISO } from "../lib/level";
 import { supabase, supabaseConfigured } from "../lib/supabase";
 import type { FishRow } from "../lib/types";
 
 export default function FishTankPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [fish, setFish] = useState<FishRow[]>([]);
-  const [fedToday, setFedToday] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [showAdopt, setShowAdopt] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
@@ -77,23 +75,6 @@ export default function FishTankPage() {
     };
   }, []);
 
-  const refreshFedToday = useCallback(async () => {
-    if (!supabaseConfigured || !supabase || !userId) {
-      setFedToday(false);
-      return;
-    }
-    const { count } = await supabase
-      .from("feedings")
-      .select("id", { count: "exact", head: true })
-      .eq("feeder_id", userId)
-      .gte("created_at", shanghaiDayStartISO());
-    setFedToday((count ?? 0) > 0);
-  }, [userId]);
-
-  useEffect(() => {
-    void refreshFedToday();
-  }, [refreshFedToday]);
-
   const handleEat = useCallback(
     (p: EatPayload) => {
       const eaten = fish.find((f) => f.id === p.fishId);
@@ -134,9 +115,7 @@ export default function FishTankPage() {
       <TankCanvas
         fish={fish}
         userId={userId}
-        canFeed={Boolean(userId) && !fedToday}
         onEat={handleEat}
-        onFedToday={() => void refreshFedToday()}
         onActionBlocked={showToast}
       />
 
@@ -145,11 +124,6 @@ export default function FishTankPage() {
         {myFish && (
           <span className="hud-chip" style={{ color: myFish.color }}>
             {myFish.name} · Lv.{myFish.level}
-          </span>
-        )}
-        {userId && (
-          <span className="hud-chip">
-            今日投喂 {fedToday ? "1/1" : "0/1"}
           </span>
         )}
         {userId ? (
@@ -195,7 +169,7 @@ export default function FishTankPage() {
       </div>
 
       <p className="tank-tip">
-        点击水面投喂 · 每天仅 1 次（点击即计） · 鱼食 2 分钟无人吃会消失
+        点击水面投喂（不限次数）· 每条鱼每天最多升 1 级 · 悬浮鱼身查看名字等级
       </p>
 
       {toast && <div className="tank-toast">{toast}</div>}
@@ -218,7 +192,6 @@ export default function FishTankPage() {
           onRelease={() => {
             setShowPanel(false);
             showToast("小鱼已放生，可以重新领养了");
-            void refreshFedToday();
           }}
         />
       )}

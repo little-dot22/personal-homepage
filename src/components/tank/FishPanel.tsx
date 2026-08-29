@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { feedsForLevel, MAX_LEVEL, nextLevelFeeds } from "../../lib/level";
+import { MAX_LEVEL, shanghaiToday } from "../../lib/level";
 import { supabase } from "../../lib/supabase";
 import type { FishAppearance, FishRow } from "../../lib/types";
 import AppearanceEditor from "./AppearanceEditor";
@@ -104,15 +104,8 @@ export default function FishPanel({
     else onSaved("语句已保存");
   };
 
-  const next = nextLevelFeeds(fish.feed_count);
-  const progress =
-    next === null
-      ? 100
-      : Math.round(
-          ((fish.feed_count - feedsForLevel(fish.level)) /
-            (next - feedsForLevel(fish.level))) *
-            100
-        );
+  const leveledToday = fish.last_levelup_date === shanghaiToday();
+  const progress = Math.min(100, Math.round((fish.level / MAX_LEVEL) * 100));
 
   return createPortal(
     <div className="modal-overlay" onClick={onClose}>
@@ -146,23 +139,27 @@ export default function FishPanel({
           <div className="status-block">
             <div className="status-line">
               <span className="opt-label">等级</span>
-              <span className="level-badge">Lv.{fish.level}</span>
+              <span className="level-badge">Lv.{fish.level} / {MAX_LEVEL}</span>
             </div>
             <div className="status-line">
-              <span className="opt-label">累计投喂</span>
+              <span className="opt-label">累计被投喂</span>
               <span>{fish.feed_count} 次</span>
             </div>
             <div className="status-line">
-              <span className="opt-label">
-                {next === null ? "已满级" : `距离 Lv.${fish.level + 1}`}
+              <span className="opt-label">今日升级</span>
+              <span style={{ color: leveledToday ? "#40e0d0" : "var(--dim)" }}>
+                {fish.level >= MAX_LEVEL
+                  ? "已满级"
+                  : leveledToday
+                    ? "已升级"
+                    : "尚未升级"}
               </span>
-              <span>{next === null ? "—" : `还差 ${next - fish.feed_count} 次投喂`}</span>
             </div>
             <div className="progress-bar">
               <div className="progress-fill" style={{ width: `${progress}%` }} />
             </div>
             <p className="modal-sub">
-              等级越高，可编辑的语句越多（当前可编辑 {fish.level} 条，满级 {MAX_LEVEL} 条）
+              每条鱼每天最多升 1 级，满级 {MAX_LEVEL} 级；等级决定可编辑的语句数（当前可编辑 {fish.level} 条）
             </p>
           </div>
         )}
@@ -236,7 +233,7 @@ export default function FishPanel({
           ) : (
             <div className="release-confirm">
               <p className="release-warn">
-                确认放生？这条鱼会永久消失，等级、语句、外观全部清空；放生后可以重新领养（从 0 级开始），并恢复今天的投喂机会。
+                确认放生？这条鱼会永久消失，等级、语句、外观全部清空；放生后可以重新领养一条 0 级的新鱼。
               </p>
               <div className="release-actions">
                 <button

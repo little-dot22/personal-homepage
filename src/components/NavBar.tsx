@@ -25,6 +25,16 @@ export default function NavBar() {
           }}
         />
       )}
+      {onTank && visible && (
+        <button
+          type="button"
+          className="nav-close"
+          aria-label="隐藏导航栏"
+          onClick={() => setVisible(false)}
+        >
+          ×
+        </button>
+      )}
       <header
         className={
           "navbar" +

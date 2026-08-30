@@ -1,6 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import {
+  bikiniHorizon,
+  bikiniScale,
+  drawCloud,
+  drawKrabs,
+  drawPatrick,
+  drawPearl,
+  drawPlankton,
+  drawSponge,
+  drawSquidward,
+  renderStaticBg
+} from "../../lib/bikini";
 import { drawFish } from "../../lib/fishDraw";
 import { supabase, supabaseConfigured } from "../../lib/supabase";
 import type { FishAppearance, FishRow } from "../../lib/types";
@@ -261,6 +273,8 @@ export default function TankCanvas({
 
     let W = 0;
     let H = 0;
+    const bgCanvas = document.createElement("canvas");
+    const bgCtx = bgCanvas.getContext("2d");
     const resize = () => {
       W = wrap.clientWidth;
       H = wrap.clientHeight;
@@ -270,29 +284,21 @@ export default function TankCanvas({
       canvas.style.width = W + "px";
       canvas.style.height = H + "px";
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      bgCanvas.width = Math.max(1, W);
+      bgCanvas.height = Math.max(1, H);
+      if (bgCtx) renderStaticBg(bgCtx, W, H);
     };
     resize();
     const ro = new ResizeObserver(resize);
     ro.observe(wrap);
     window.addEventListener("resize", resize);
 
-    // 场景装饰
+    // 水气泡装饰
     const particles = Array.from({ length: 26 }, () => ({
       x: Math.random(),
       y: Math.random(),
       r: 2 + Math.random() * 5,
       speed: 12 + Math.random() * 22,
-      phase: Math.random() * Math.PI * 2
-    }));
-    const plants = Array.from({ length: 9 }, (_, i) => ({
-      x: (i + 0.5) * (1 / 9) + (Math.random() - 0.5) * 0.05,
-      h: 60 + Math.random() * 110,
-      phase: Math.random() * Math.PI * 2,
-      len: 0.75 + Math.random() * 0.7
-    }));
-    const rays = Array.from({ length: 5 }, (_, i) => ({
-      x: (i + 0.35) * (1 / 5),
-      w: 90 + Math.random() * 120,
       phase: Math.random() * Math.PI * 2
     }));
 
@@ -434,29 +440,23 @@ export default function TankCanvas({
       foodRef.current = foodRef.current.filter((f) => f.state !== "gone");
     };
 
-    const draw = (now: number, dt: number) => {
-      // 水体
-      const water = ctx.createLinearGradient(0, 0, 0, H);
-      water.addColorStop(0, "#0a2e4a");
-      water.addColorStop(0.5, "#0c3a5c");
-      water.addColorStop(1, "#071f33");
-      ctx.fillStyle = water;
-      ctx.fillRect(0, 0, W, H);
-
-      // 光线
-      for (const ray of rays) {
-        const sway = Math.sin(now * 0.5 + ray.phase) * 24;
-        const g = ctx.createLinearGradient(0, 0, 0, H);
-        g.addColorStop(0, "rgba(160,220,255,0.08)");
-        g.addColorStop(1, "rgba(160,220,255,0)");
-        ctx.fillStyle = g;
-        ctx.beginPath();
-        ctx.moveTo(ray.x * W, 0);
-        ctx.lineTo(ray.x * W + sway + ray.w * 0.6, 0);
-        ctx.lineTo(ray.x * W + sway - 20, H);
-        ctx.lineTo(ray.x * W - ray.w, H);
-        ctx.closePath();
-        ctx.fill();
+    const draw = (t: number, dt: number) => {
+      // 比基尼海滩背景
+      if (bgCtx && bgCanvas.width > 0) {
+        ctx.drawImage(bgCanvas, 0, 0, W, H);
+        const s = bikiniScale(H);
+        const horizon = bikiniHorizon(H);
+        // 花云
+        drawCloud(ctx, W * 0.2, H * 0.13, t, s * 0.9);
+        drawCloud(ctx, W * 0.55, H * 0.2, t + 2, s * 1.1);
+        drawCloud(ctx, W * 0.86, H * 0.1, t + 4, s * 0.8);
+        // 角色
+        drawSponge(ctx, W * 0.088, horizon + 26, t, s);
+        drawPatrick(ctx, W * 0.3, horizon + 30, t, s);
+        drawSquidward(ctx, W * 0.505, horizon + 26, t, s);
+        drawPearl(ctx, W * 0.63, horizon + 24, t, s * 0.95);
+        drawKrabs(ctx, W * 0.71, horizon + 24, t, s);
+        drawPlankton(ctx, W * 0.9, horizon + 40, t, s);
       }
 
       // 气泡
@@ -466,11 +466,11 @@ export default function TankCanvas({
           b.y = 1.05;
           b.x = Math.random();
         }
-        ctx.strokeStyle = "rgba(200,235,255,0.22)";
+        ctx.strokeStyle = "rgba(255,255,255,0.5)";
         ctx.lineWidth = 1.2;
         ctx.beginPath();
         ctx.arc(
-          b.x * W + Math.sin(now * 2 + b.phase) * 6,
+          b.x * W + Math.sin(t * 2 + b.phase) * 6,
           b.y * H,
           b.r,
           0,
@@ -479,40 +479,19 @@ export default function TankCanvas({
         ctx.stroke();
       }
 
-      // 水草
-      for (const p of plants) {
-        const sway = Math.sin(now * 1.2 + p.phase) * 12;
-        ctx.strokeStyle = "rgba(40,160,140,0.5)";
-        ctx.lineWidth = 5;
-        ctx.lineCap = "round";
-        ctx.beginPath();
-        ctx.moveTo(p.x * W, H);
-        ctx.quadraticCurveTo(
-          p.x * W + sway,
-          H - p.h * 0.55,
-          p.x * W + sway * p.len * 1.6,
-          H - p.h
-        );
-        ctx.stroke();
-      }
-
-      // 沙底
-      const sand = ctx.createLinearGradient(0, H - 30, 0, H);
-      sand.addColorStop(0, "rgba(190,160,110,0.22)");
-      sand.addColorStop(1, "rgba(150,120,80,0.42)");
-      ctx.fillStyle = sand;
-      ctx.fillRect(0, H - 30, W, 30);
-
       // 鱼食
       for (const f of foodRef.current) {
-        const pulse = 1 + Math.sin(now * 6) * 0.15;
+        const pulse = 1 + Math.sin(t * 6) * 0.15;
         ctx.save();
         ctx.translate(f.x, f.y);
         ctx.fillStyle = "#d8a24a";
+        ctx.strokeStyle = "rgba(90,60,20,0.55)";
+        ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.arc(0, 0, 5 * pulse, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = "rgba(255,235,180,0.85)";
+        ctx.stroke();
+        ctx.fillStyle = "rgba(255,235,180,0.9)";
         ctx.beginPath();
         ctx.arc(-1.5, -1.5, 1.8 * pulse, 0, Math.PI * 2);
         ctx.fill();
@@ -523,11 +502,11 @@ export default function TankCanvas({
       for (const s of simRef.current.values()) {
         ctx.save();
         ctx.translate(s.x, s.y);
-        const bob = Math.sin(now * 1.8 + s.phase) * 4;
+        const bob = Math.sin(t * 1.8 + s.phase) * 4;
         ctx.translate(0, bob);
         const rot =
           clamp(s.vy * 0.004, -0.3, 0.3) +
-          Math.sin(now * 1.2 + s.phase) * 0.04;
+          Math.sin(t * 1.2 + s.phase) * 0.04;
         ctx.rotate(rot);
         const eatScale =
           s.state === "eat"
@@ -536,7 +515,7 @@ export default function TankCanvas({
         drawFish(ctx, {
           appearance: appOf(s.row),
           size: s.size * eatScale,
-          time: now + s.phase * 10,
+          time: t + s.phase * 10,
           facing: s.vx < 0 ? -1 : 1,
           glow: s.glow
         });

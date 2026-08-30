@@ -651,9 +651,8 @@ export default function TankCanvas({
     let swimTimer = 5;
     const rollSilhouetteSize = () => {
       const r = Math.random();
-      if (r < 0.5) return H * (0.06 + Math.random() * 0.05);
-      if (r < 0.8) return H * (0.11 + Math.random() * 0.09);
-      if (r < 0.95) return H * (0.2 + Math.random() * 0.12);
+      if (r < 0.5) return H * (0.11 + Math.random() * 0.09);
+      if (r < 0.9) return H * (0.2 + Math.random() * 0.12);
       return H * (0.32 + Math.random() * 0.18);
     };
 

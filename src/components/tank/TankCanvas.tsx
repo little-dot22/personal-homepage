@@ -444,28 +444,56 @@ export default function TankCanvas({
         drawCloud(ctx, W * 0.2, H * 0.12, t, s * 0.9);
         drawCloud(ctx, W * 0.55, H * 0.18, t + 2, s * 1.1);
         drawCloud(ctx, W * 0.86, H * 0.09, t + 4, s * 0.8);
-        // 剑鱼剪影（上半屏，游在角色与鱼之后）
+        // 剑鱼剪影（上半屏，双向，游在角色与鱼之后）
         for (const sw of swordfish) {
           const img = getSprite("swordfish");
           if (!img) continue;
           const w = sw.size * (img.naturalWidth / img.naturalHeight);
           const y = sw.y + Math.sin(t * 1.5 + sw.phase) * 6;
-          ctx.drawImage(img, sw.x - w / 2, y - sw.size / 2, w, sw.size);
+          ctx.save();
+          ctx.translate(sw.x, y);
+          if (sw.toRight) ctx.scale(-1, 1);
+          ctx.drawImage(img, -w / 2, -sw.size / 2, w, sw.size);
+          ctx.restore();
         }
-        // 沙滩装饰（贝壳/珊瑚/水母，轻微浮动）
-        const decos: Array<[string, number, number]> = [
-          ["shell", 0.045, 46],
-          ["coral", 0.33, 95],
-          ["jelly", 0.79, 70]
-        ];
+        // 沙滩装饰：海螺埋进沙里、珊瑚立在沙滩上；水母悬浮在右上角
         const groundY = sandGroundY(H);
-        for (const [name, fx, fh] of decos) {
+        const drawDeco = (
+          name: string,
+          fx: number,
+          fh: number,
+          bob: number,
+          bury: number
+        ) => {
           const img = getSprite(name);
-          if (!img) continue;
+          if (!img) return;
           const h = fh * s;
           const w = h * (img.naturalWidth / img.naturalHeight);
-          const bob = Math.abs(Math.sin(t * 1.2 + fx * 20)) * 3;
-          ctx.drawImage(img, fx * W - w / 2, groundY - bob - h, w, h);
+          const x = fx * W;
+          const y = groundY - bob - h + bury * h;
+          ctx.drawImage(img, x - w / 2, y, w, h);
+          if (bury > 0) {
+            ctx.fillStyle = "#f2dda2";
+            ctx.beginPath();
+            ctx.ellipse(x, groundY - 4, w * 0.78, bury * h * 0.52 + 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = "rgba(220,184,119,0.6)";
+            ctx.beginPath();
+            ctx.ellipse(x, groundY - 1, w * 0.6, bury * h * 0.3 + 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        };
+        drawDeco("shell", 0.045, 46, 1, 0.55);
+        drawDeco("coral", 0.33, 95, 3, 0);
+        {
+          const img = getSprite("jelly");
+          if (img) {
+            const h = 85 * s;
+            const w = h * (img.naturalWidth / img.naturalHeight);
+            const jx = W * 0.87 + Math.sin(t * 0.5) * 14;
+            const jy = H * 0.13 + Math.sin(t * 1.1) * 9;
+            ctx.drawImage(img, jx - w / 2, jy - h / 2, w, h);
+          }
         }
         // 角色（图片素材，站进沙地里、绘制在沙滩图层之上）
         const drawChar = (
@@ -646,13 +674,14 @@ export default function TankCanvas({
     };
     scheduleSpeech();
 
-    // 剑鱼剪影：每隔一段时间从右侧出现，直线游到左侧消失
+    // 剑鱼剪影：每隔一段时间出现，双向直线游动
     const swordfish: Array<{
       x: number;
       y: number;
       speed: number;
       size: number;
       phase: number;
+      toRight: boolean;
     }> = [];
     let swimTimer = 6;
 
@@ -665,18 +694,25 @@ export default function TankCanvas({
       const t = now / 1000;
       swimTimer -= dt;
       if (swimTimer <= 0 && swordfish.length < 2) {
+        const toRight = Math.random() < 0.5;
         swordfish.push({
-          x: W + 150,
+          x: toRight ? -150 : W + 150,
           y: H * (0.1 + Math.random() * 0.3),
           speed: 65 + Math.random() * 40,
           size: (70 + Math.random() * 25) * bikiniScale(H),
-          phase: Math.random() * Math.PI * 2
+          phase: Math.random() * Math.PI * 2,
+          toRight
         });
         swimTimer = 14 + Math.random() * 16;
       }
-      for (const sw of swordfish) sw.x -= sw.speed * dt;
+      for (const sw of swordfish) {
+        sw.x += (sw.toRight ? 1 : -1) * sw.speed * dt;
+      }
       for (let i = swordfish.length - 1; i >= 0; i--) {
-        if (swordfish[i].x < -180) swordfish.splice(i, 1);
+        const sw = swordfish[i];
+        if (sw.toRight ? sw.x > W + 180 : sw.x < -180) {
+          swordfish.splice(i, 1);
+        }
       }
       updateFish(dt, foodRef.current);
       updateFood(dt);

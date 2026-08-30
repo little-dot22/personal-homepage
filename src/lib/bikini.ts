@@ -92,8 +92,8 @@ export function renderStaticBg(ctx: CanvasRenderingContext2D, W: number, H: numb
   }
   ctx.stroke();
 
-  sandFlower(ctx, W * 0.1, sandTop + 8, s);
-  sandFlower(ctx, W * 0.88, sandTop + 10, s * 1.1);
+  sandFlower(ctx, W * 0.06, sandTop + 8, s);
+  sandFlower(ctx, W * 0.94, sandTop + 10, s * 1.1);
 }
 
 export function drawCloud(

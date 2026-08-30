@@ -457,17 +457,20 @@ export default function TankCanvas({
           const w = targetH * (img.naturalWidth / img.naturalHeight);
           ctx.drawImage(img, x - w / 2, groundY - bob - targetH, w, targetH);
         };
-        // 蟹堡王居中，最大
-        drawChar("krusty", W * 0.5, 330 * s, 0);
-        // 角色集中围绕蟹堡王
-        drawChar("squidward", W * 0.275, 175 * s, Math.abs(Math.sin(t * 1.5 + 2)) * 2);
-        drawChar("patrick", W * 0.33, 168 * s, Math.abs(Math.sin(t * 1.8 + 1)) * 2);
-        drawChar("sponge", W * 0.385, 170 * s, Math.abs(Math.sin(t * 2.2)) * 2);
-        drawChar("gary", W * 0.445, 78 * s, Math.abs(Math.sin(t * 1.4 + 1)) * 1.5);
-        drawChar("krabs", W * 0.49, 150 * s, Math.abs(Math.sin(t * 2 + 0.5)) * 1.5);
-        drawChar("pearl", W * 0.575, 170 * s, Math.abs(Math.sin(t * 1.7 + 0.8)) * 2);
-        drawChar("sandy", W * 0.635, 165 * s, Math.abs(Math.sin(t * 2 + 3)) * 2);
-        drawChar("plankton", W * 0.7, 62 * s, Math.abs(Math.sin(t * 6)) * 5);
+        // 蟹堡王居中，更大
+        drawChar("krusty", W * 0.5, 400 * s, 0);
+        // 组一：海绵宝宝 + 小蜗 + 派大星 + 珊迪（屏幕左侧，互相挨着）
+        drawChar("sponge", W * 0.135, 170 * s, Math.abs(Math.sin(t * 2.2)) * 2);
+        drawChar("gary", W * 0.17, 78 * s, Math.abs(Math.sin(t * 1.4 + 1)) * 1.5);
+        drawChar("patrick", W * 0.205, 168 * s, Math.abs(Math.sin(t * 1.8 + 1)) * 2);
+        drawChar("sandy", W * 0.25, 165 * s, Math.abs(Math.sin(t * 2 + 3)) * 2);
+        // 组二：蟹老板 + 珍珍（蟹堡王门口）
+        drawChar("krabs", W * 0.475, 150 * s, Math.abs(Math.sin(t * 2 + 0.5)) * 1.5);
+        drawChar("pearl", W * 0.53, 170 * s, Math.abs(Math.sin(t * 1.7 + 0.8)) * 2);
+        // 组四：章鱼哥（组二与组三之间）
+        drawChar("squidward", W * 0.7, 175 * s, Math.abs(Math.sin(t * 1.5 + 2)) * 2);
+        // 组三：痞老板（屏幕右侧，独自一组）
+        drawChar("plankton", W * 0.88, 62 * s, Math.abs(Math.sin(t * 6)) * 5);
       }
 
       // 气泡

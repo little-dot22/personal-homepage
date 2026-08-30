@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import {
-  bikiniHorizon,
   bikiniScale,
   drawCloud,
-  renderStaticBg
+  renderStaticBg,
+  sandGroundY
 } from "../../lib/bikini";
 import { getSprite } from "../../lib/bikiniAssets";
 import { drawFish } from "../../lib/fishDraw";
@@ -440,12 +440,12 @@ export default function TankCanvas({
       if (bgCtx && bgCanvas.width > 0) {
         ctx.drawImage(bgCanvas, 0, 0, W, H);
         const s = bikiniScale(H);
-        const horizon = bikiniHorizon(H);
         // 花云
         drawCloud(ctx, W * 0.2, H * 0.12, t, s * 0.9);
         drawCloud(ctx, W * 0.55, H * 0.18, t + 2, s * 1.1);
         drawCloud(ctx, W * 0.86, H * 0.09, t + 4, s * 0.8);
-        // 角色（图片素材，底部锚点 + 呼吸蹦跳动画）
+        // 角色（图片素材，站进沙地里、绘制在沙滩图层之上）
+        const groundY = sandGroundY(H);
         const drawChar = (
           name: string,
           x: number,
@@ -455,21 +455,19 @@ export default function TankCanvas({
           const img = getSprite(name);
           if (!img) return;
           const w = targetH * (img.naturalWidth / img.naturalHeight);
-          ctx.drawImage(img, x - w / 2, horizon + 4 - bob - targetH, w, targetH);
+          ctx.drawImage(img, x - w / 2, groundY - bob - targetH, w, targetH);
         };
-        // 蟹堡王（大，主视觉，先画让角色叠在前面）
-        drawChar("krusty", W * 0.66, 236 * s, Math.abs(Math.sin(t * 0.8)) * 2);
-        // 左侧住宅区
-        drawChar("sponge", W * 0.075, 110 * s, Math.abs(Math.sin(t * 2.2)) * 3);
-        drawChar("gary", W * 0.117, 52 * s, Math.abs(Math.sin(t * 1.4 + 1)) * 2);
-        drawChar("patrick", W * 0.265, 112 * s, Math.abs(Math.sin(t * 1.8 + 1)) * 2.5);
-        drawChar("squidward", W * 0.455, 116 * s, Math.abs(Math.sin(t * 1.5 + 2)) * 2);
-        // 蟹堡王周围
-        drawChar("sandy", W * 0.575, 108 * s, Math.abs(Math.sin(t * 2 + 3)) * 2.5);
-        drawChar("krabs", W * 0.652, 98 * s, Math.abs(Math.sin(t * 2 + 0.5)) * 2);
-        drawChar("pearl", W * 0.755, 112 * s, Math.abs(Math.sin(t * 1.7 + 0.8)) * 2.5);
-        // 海之霸旁
-        drawChar("plankton", W * 0.895, 44 * s, Math.abs(Math.sin(t * 6)) * 6);
+        // 蟹堡王居中，最大
+        drawChar("krusty", W * 0.5, 330 * s, 0);
+        // 角色集中围绕蟹堡王
+        drawChar("squidward", W * 0.275, 175 * s, Math.abs(Math.sin(t * 1.5 + 2)) * 2);
+        drawChar("patrick", W * 0.33, 168 * s, Math.abs(Math.sin(t * 1.8 + 1)) * 2);
+        drawChar("sponge", W * 0.385, 170 * s, Math.abs(Math.sin(t * 2.2)) * 2);
+        drawChar("gary", W * 0.445, 78 * s, Math.abs(Math.sin(t * 1.4 + 1)) * 1.5);
+        drawChar("krabs", W * 0.49, 150 * s, Math.abs(Math.sin(t * 2 + 0.5)) * 1.5);
+        drawChar("pearl", W * 0.575, 170 * s, Math.abs(Math.sin(t * 1.7 + 0.8)) * 2);
+        drawChar("sandy", W * 0.635, 165 * s, Math.abs(Math.sin(t * 2 + 3)) * 2);
+        drawChar("plankton", W * 0.7, 62 * s, Math.abs(Math.sin(t * 6)) * 5);
       }
 
       // 气泡

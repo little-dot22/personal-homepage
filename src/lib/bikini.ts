@@ -1,25 +1,12 @@
-// 比基尼海滩背景（沙地 + 矢量房屋 + 花云；角色与蟹堡王使用图片素材渲染）
+// 比基尼海滩背景（沙地 + 花云；蟹堡王与角色用图片素材，居中布局）
 
 export const bikiniScale = (H: number) =>
-  Math.min(1.15, Math.max(0.5, H / 950));
+  Math.min(1.2, Math.max(0.55, H / 900));
 
 export const bikiniHorizon = (H: number) => H * 0.9;
 
-function rr(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number
-) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
+export function sandGroundY(H: number): number {
+  return bikiniHorizon(H) + 12;
 }
 
 function sandFlower(ctx: CanvasRenderingContext2D, x: number, y: number, s: number) {
@@ -43,221 +30,6 @@ function sandFlower(ctx: CanvasRenderingContext2D, x: number, y: number, s: numb
   ctx.fillStyle = "#ffe88a";
   ctx.beginPath();
   ctx.arc(0, -40, 7, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-}
-
-function pineapple(ctx: CanvasRenderingContext2D, x: number, groundY: number, s: number) {
-  ctx.save();
-  ctx.translate(x, groundY);
-  ctx.scale(s, s);
-  rr(ctx, -58, -150, 116, 150, 30);
-  ctx.fillStyle = "#e9a54d";
-  ctx.fill();
-  ctx.strokeStyle = "#b8792c";
-  ctx.lineWidth = 3;
-  ctx.stroke();
-  ctx.save();
-  rr(ctx, -58, -150, 116, 150, 30);
-  ctx.clip();
-  ctx.strokeStyle = "#cf9138";
-  ctx.lineWidth = 2.5;
-  for (let i = -3; i <= 3; i++) {
-    ctx.beginPath();
-    ctx.moveTo(-58, i * 24 + 4);
-    ctx.lineTo(58, i * 24 + 24);
-    ctx.stroke();
-  }
-  for (let i = -3; i <= 3; i++) {
-    ctx.beginPath();
-    ctx.moveTo(i * 24, -150);
-    ctx.lineTo(i * 24 - 20, 0);
-    ctx.stroke();
-  }
-  ctx.restore();
-  for (let layer = 0; layer < 2; layer++) {
-    ctx.fillStyle = layer === 0 ? "#3d9c4e" : "#4db75f";
-    ctx.strokeStyle = "#2e7a3d";
-    ctx.lineWidth = 2.5;
-    for (let i = -2; i <= 2; i++) {
-      ctx.save();
-      ctx.translate(i * 16, -150 + layer * 4);
-      ctx.rotate(i * 0.24 - layer * 0.12);
-      ctx.beginPath();
-      ctx.ellipse(0, -36, 13 - layer * 2, 40, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.restore();
-    }
-  }
-  rr(ctx, -22, -54, 44, 54, 22);
-  ctx.fillStyle = "#6d4423";
-  ctx.fill();
-  ctx.strokeStyle = "#4a2d15";
-  ctx.lineWidth = 3;
-  ctx.stroke();
-  ctx.strokeStyle = "rgba(74,45,21,0.55)";
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(0, -54);
-  ctx.lineTo(0, 0);
-  ctx.stroke();
-  ctx.fillStyle = "#ffd166";
-  ctx.beginPath();
-  ctx.arc(13, -27, 3.2, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#cfeefb";
-  ctx.strokeStyle = "#7fb7cc";
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.arc(40, -102, 17, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-  ctx.strokeStyle = "#7fb7cc";
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  ctx.moveTo(40, -119);
-  ctx.lineTo(40, -85);
-  ctx.moveTo(23, -102);
-  ctx.lineTo(57, -102);
-  ctx.stroke();
-  ctx.restore();
-}
-
-function rockHouse(ctx: CanvasRenderingContext2D, x: number, groundY: number, s: number) {
-  ctx.save();
-  ctx.translate(x, groundY);
-  ctx.scale(s, s);
-  ctx.fillStyle = "#8b5a3c";
-  ctx.strokeStyle = "#6b4226";
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.ellipse(0, -58, 82, 70, 0, Math.PI, Math.PI * 2);
-  ctx.lineTo(82, 0);
-  ctx.lineTo(-82, 0);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-  ctx.fillStyle = "#7a4d31";
-  for (const [px, py, pr] of [
-    [-38, -80, 16],
-    [30, -92, 12],
-    [48, -38, 18],
-    [-52, -34, 14]
-  ] as const) {
-    ctx.beginPath();
-    ctx.arc(px, py, pr, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.fillStyle = "#6fae58";
-  for (const [mx, my, mr] of [
-    [-58, -40, 10],
-    [-30, -100, 8],
-    [56, -60, 9]
-  ] as const) {
-    ctx.beginPath();
-    ctx.arc(mx, my, mr, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  rr(ctx, -20, -32, 40, 32, 20);
-  ctx.fillStyle = "#45291a";
-  ctx.fill();
-  ctx.strokeStyle = "#33200f";
-  ctx.lineWidth = 3;
-  ctx.stroke();
-  ctx.restore();
-}
-
-function tikiHouse(ctx: CanvasRenderingContext2D, x: number, groundY: number, s: number) {
-  ctx.save();
-  ctx.translate(x, groundY);
-  ctx.scale(s, s);
-  rr(ctx, -52, -148, 104, 148, 24);
-  ctx.fillStyle = "#b3aea2";
-  ctx.fill();
-  ctx.strokeStyle = "#8a857a";
-  ctx.lineWidth = 3;
-  ctx.stroke();
-  ctx.fillStyle = "#a29d90";
-  ctx.strokeStyle = "#8a857a";
-  ctx.lineWidth = 2.5;
-  rr(ctx, -34, -104, 68, 12, 6);
-  ctx.fill();
-  ctx.stroke();
-  ctx.fillStyle = "#7d786c";
-  for (const ex of [-22, 22]) {
-    ctx.beginPath();
-    ctx.ellipse(ex, -88, 13, 16, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.fillStyle = "#ffffff";
-  for (const ex of [-22, 22]) {
-    ctx.beginPath();
-    ctx.ellipse(ex, -86, 8, 12, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.fillStyle = "#3a3a3a";
-  ctx.beginPath();
-  ctx.arc(-22, -82, 4, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(22, -82, 4, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#a29d90";
-  ctx.strokeStyle = "#8a857a";
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  ctx.moveTo(-10, -60);
-  ctx.quadraticCurveTo(0, -30, 10, -22);
-  ctx.lineTo(26, -22);
-  ctx.quadraticCurveTo(22, -40, 12, -58);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-  rr(ctx, -26, -36, 52, 36, 26);
-  ctx.fillStyle = "#4a463f";
-  ctx.fill();
-  ctx.strokeStyle = "#33302a";
-  ctx.lineWidth = 3;
-  ctx.stroke();
-  ctx.restore();
-}
-
-function chumBucket(ctx: CanvasRenderingContext2D, x: number, groundY: number, s: number) {
-  ctx.save();
-  ctx.translate(x, groundY);
-  ctx.scale(s, s);
-  ctx.fillStyle = "#7d8890";
-  ctx.strokeStyle = "#5a636b";
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(-38, -76);
-  ctx.lineTo(38, -76);
-  ctx.lineTo(30, 0);
-  ctx.lineTo(-30, 0);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.ellipse(0, -76, 38, 8, 0, 0, Math.PI * 2);
-  ctx.fillStyle = "#909ba3";
-  ctx.fill();
-  ctx.stroke();
-  ctx.strokeStyle = "#5a636b";
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  ctx.arc(0, -46, 26, Math.PI, Math.PI * 2);
-  ctx.stroke();
-  ctx.fillStyle = "#3d4348";
-  ctx.beginPath();
-  ctx.ellipse(0, -26, 20, 22, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#6d7780";
-  ctx.beginPath();
-  ctx.arc(-14, -18, 2.5, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(14, -18, 2.5, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 }
@@ -320,15 +92,8 @@ export function renderStaticBg(ctx: CanvasRenderingContext2D, W: number, H: numb
   }
   ctx.stroke();
 
-  sandFlower(ctx, W * 0.19, sandTop + 8, s);
-  sandFlower(ctx, W * 0.40, sandTop + 12, s * 1.1);
-  sandFlower(ctx, W * 0.61, sandTop + 8, s * 0.9);
-  sandFlower(ctx, W * 0.83, sandTop + 10, s);
-
-  pineapple(ctx, W * 0.055, sandTop + 4, s);
-  rockHouse(ctx, W * 0.265, sandTop + 6, s);
-  tikiHouse(ctx, W * 0.47, sandTop + 4, s);
-  chumBucket(ctx, W * 0.9, sandTop + 8, s);
+  sandFlower(ctx, W * 0.1, sandTop + 8, s);
+  sandFlower(ctx, W * 0.88, sandTop + 10, s * 1.1);
 }
 
 export function drawCloud(

@@ -876,3 +876,22 @@ body::before {
 .opt-btn.danger:hover {
   border-color: #ff6b6b;
 }
+
+/* 鱼缸页导航自动隐藏 */
+.navbar.auto-hide {
+  transform: translateY(-130%);
+  transition: transform 0.35s ease;
+}
+
+.navbar.auto-hide.visible {
+  transform: translateY(0);
+}
+
+.nav-trigger {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  z-index: 9;
+}

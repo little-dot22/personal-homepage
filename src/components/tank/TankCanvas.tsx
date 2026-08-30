@@ -444,8 +444,30 @@ export default function TankCanvas({
         drawCloud(ctx, W * 0.2, H * 0.12, t, s * 0.9);
         drawCloud(ctx, W * 0.55, H * 0.18, t + 2, s * 1.1);
         drawCloud(ctx, W * 0.86, H * 0.09, t + 4, s * 0.8);
-        // 角色（图片素材，站进沙地里、绘制在沙滩图层之上）
+        // 剑鱼剪影（上半屏，游在角色与鱼之后）
+        for (const sw of swordfish) {
+          const img = getSprite("swordfish");
+          if (!img) continue;
+          const w = sw.size * (img.naturalWidth / img.naturalHeight);
+          const y = sw.y + Math.sin(t * 1.5 + sw.phase) * 6;
+          ctx.drawImage(img, sw.x - w / 2, y - sw.size / 2, w, sw.size);
+        }
+        // 沙滩装饰（贝壳/珊瑚/水母，轻微浮动）
+        const decos: Array<[string, number, number]> = [
+          ["shell", 0.045, 46],
+          ["coral", 0.33, 95],
+          ["jelly", 0.79, 70]
+        ];
         const groundY = sandGroundY(H);
+        for (const [name, fx, fh] of decos) {
+          const img = getSprite(name);
+          if (!img) continue;
+          const h = fh * s;
+          const w = h * (img.naturalWidth / img.naturalHeight);
+          const bob = Math.abs(Math.sin(t * 1.2 + fx * 20)) * 3;
+          ctx.drawImage(img, fx * W - w / 2, groundY - bob - h, w, h);
+        }
+        // 角色（图片素材，站进沙地里、绘制在沙滩图层之上）
         const drawChar = (
           name: string,
           x: number,
@@ -458,7 +480,7 @@ export default function TankCanvas({
           ctx.drawImage(img, x - w / 2, groundY - bob - targetH, w, targetH);
         };
         // 蟹堡王居中，更大
-        drawChar("krusty", W * 0.5, 500 * s, 0);
+        drawChar("krusty", W * 0.5, 400 * s, 0);
         // 组一：海绵宝宝 + 小蜗 + 派大星 + 珊迪（屏幕左侧，互相挨着）
         drawChar("sponge", W * 0.135, 170 * s, Math.abs(Math.sin(t * 2.2)) * 2);
         drawChar("gary", W * 0.17, 78 * s, Math.abs(Math.sin(t * 1.4 + 1)) * 1.5);
@@ -624,6 +646,16 @@ export default function TankCanvas({
     };
     scheduleSpeech();
 
+    // 剑鱼剪影：每隔一段时间从右侧出现，直线游到左侧消失
+    const swordfish: Array<{
+      x: number;
+      y: number;
+      speed: number;
+      size: number;
+      phase: number;
+    }> = [];
+    let swimTimer = 6;
+
     let last = performance.now();
     let raf = 0;
     const loop = (now: number) => {
@@ -631,6 +663,21 @@ export default function TankCanvas({
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
       const t = now / 1000;
+      swimTimer -= dt;
+      if (swimTimer <= 0 && swordfish.length < 2) {
+        swordfish.push({
+          x: W + 150,
+          y: H * (0.1 + Math.random() * 0.3),
+          speed: 65 + Math.random() * 40,
+          size: (70 + Math.random() * 25) * bikiniScale(H),
+          phase: Math.random() * Math.PI * 2
+        });
+        swimTimer = 14 + Math.random() * 16;
+      }
+      for (const sw of swordfish) sw.x -= sw.speed * dt;
+      for (let i = swordfish.length - 1; i >= 0; i--) {
+        if (swordfish[i].x < -180) swordfish.splice(i, 1);
+      }
       updateFish(dt, foodRef.current);
       updateFood(dt);
       draw(t, dt);

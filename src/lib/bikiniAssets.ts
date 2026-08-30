@@ -7,6 +7,10 @@ import plankton from "../../assert/bikini/plankton.png";
 import sandy from "../../assert/bikini/Sandy.png";
 import gary from "../../assert/bikini/GarytheSnail.png";
 import krusty from "../../assert/bikini/krusty.png";
+import coral from "../../assert/decoration/ColorfulCoralReef.png";
+import shell from "../../assert/decoration/ConchShell.png";
+import jelly from "../../assert/decoration/Jellyfish.png";
+import swordfish from "../../assert/decoration/SwordfishSilhouette.png";
 
 const sources: Record<string, string> = {
   sponge,
@@ -17,7 +21,11 @@ const sources: Record<string, string> = {
   plankton,
   sandy,
   gary,
-  krusty
+  krusty,
+  coral,
+  shell,
+  jelly,
+  swordfish
 };
 
 const images: Record<string, HTMLImageElement> = {};

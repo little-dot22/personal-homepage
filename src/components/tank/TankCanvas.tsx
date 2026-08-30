@@ -444,33 +444,19 @@ export default function TankCanvas({
         drawCloud(ctx, W * 0.2, H * 0.12, t, s * 0.9);
         drawCloud(ctx, W * 0.55, H * 0.18, t + 2, s * 1.1);
         drawCloud(ctx, W * 0.86, H * 0.09, t + 4, s * 0.8);
-        // 剪影（上半屏，双向，游在角色与鱼之后）
+        // 剪影（上半屏，双向，游在角色与鱼之后；剑鱼图朝左、鲸鱼图朝右）
         for (const sw of silhouettes) {
           const img = getSprite(sw.name);
           if (!img) continue;
           const w = sw.size * (img.naturalWidth / img.naturalHeight);
           const y = sw.y + Math.sin(t * 1.5 + sw.phase) * 6;
+          const needFlip =
+            sw.name === "whale" ? !sw.toRight : sw.toRight;
           ctx.save();
           ctx.translate(sw.x, y);
-          if (sw.toRight) ctx.scale(-1, 1);
+          if (needFlip) ctx.scale(-1, 1);
           ctx.drawImage(img, -w / 2, -sw.size / 2, w, sw.size);
           ctx.restore();
-        }
-        // 水母：右上角聚成一堆漂游，各自上下浮动
-        const jellySpots: Array<[number, number, number, number]> = [
-          [0.8, 0.11, 0.4, 1.1],
-          [0.875, 0.18, 0.6, 0.9],
-          [0.84, 0.075, 0.9, 1.3]
-        ];
-        for (let i = 0; i < jellySpots.length; i++) {
-          const [bx, by, ph, ph2] = jellySpots[i];
-          const img = getSprite("jelly");
-          if (!img) continue;
-          const h = (64 + i * 8) * s;
-          const w = h * (img.naturalWidth / img.naturalHeight);
-          const jx = W * bx + Math.sin(t * 0.4 + ph) * 20;
-          const jy = H * by + Math.sin(t * 1.1 + ph2) * 11;
-          ctx.drawImage(img, jx - w / 2, jy - h / 2, w, h);
         }
         // 角色（图片素材，站进沙地里、绘制在沙滩图层之上）
         const groundY = sandGroundY(H);

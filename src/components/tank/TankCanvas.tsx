@@ -447,16 +447,16 @@ export default function TankCanvas({
         const s = bikiniScale(H);
         const horizon = bikiniHorizon(H);
         // 花云
-        drawCloud(ctx, W * 0.2, H * 0.13, t, s * 0.9);
-        drawCloud(ctx, W * 0.55, H * 0.2, t + 2, s * 1.1);
-        drawCloud(ctx, W * 0.86, H * 0.1, t + 4, s * 0.8);
+        drawCloud(ctx, W * 0.2, H * 0.12, t, s * 0.9);
+        drawCloud(ctx, W * 0.55, H * 0.18, t + 2, s * 1.1);
+        drawCloud(ctx, W * 0.86, H * 0.09, t + 4, s * 0.8);
         // 角色
-        drawSponge(ctx, W * 0.088, horizon + 26, t, s);
-        drawPatrick(ctx, W * 0.3, horizon + 30, t, s);
-        drawSquidward(ctx, W * 0.505, horizon + 26, t, s);
-        drawPearl(ctx, W * 0.63, horizon + 24, t, s * 0.95);
-        drawKrabs(ctx, W * 0.71, horizon + 24, t, s);
-        drawPlankton(ctx, W * 0.9, horizon + 40, t, s);
+        drawSponge(ctx, W * 0.088, horizon + 4, t, s);
+        drawPatrick(ctx, W * 0.3, horizon + 6, t, s);
+        drawSquidward(ctx, W * 0.505, horizon + 4, t, s);
+        drawPearl(ctx, W * 0.625, horizon + 4, t, s * 0.95);
+        drawKrabs(ctx, W * 0.705, horizon + 4, t, s);
+        drawPlankton(ctx, W * 0.9, horizon + 8, t, s);
       }
 
       // 气泡

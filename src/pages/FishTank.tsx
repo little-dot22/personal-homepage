@@ -192,6 +192,10 @@ export default function FishTankPage() {
             setShowPanel(false);
             showToast("小鱼已放生，可以重新领养了");
           }}
+          onAccountDeleted={() => {
+            setShowPanel(false);
+            showToast("账号已注销，感谢来过鱼缸");
+          }}
         />
       )}
     </div>

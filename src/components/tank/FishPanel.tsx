@@ -11,12 +11,14 @@ export default function FishPanel({
   fish,
   onClose,
   onSaved,
-  onRelease
+  onRelease,
+  onAccountDeleted
 }: {
   fish: FishRow;
   onClose: () => void;
   onSaved: (msg: string) => void;
   onRelease: () => void;
+  onAccountDeleted: () => void;
 }) {
   const [tab, setTab] = useState<"appearance" | "statements" | "status">(
     fish.level > 0 ? "status" : "appearance"
@@ -47,6 +49,7 @@ export default function FishPanel({
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [confirmRelease, setConfirmRelease] = useState(false);
+  const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
 
   const doRelease = async () => {
     if (!supabase) return;
@@ -65,6 +68,20 @@ export default function FishPanel({
       return;
     }
     onRelease();
+  };
+
+  const doDeleteAccount = async () => {
+    if (!supabase) return;
+    setBusy(true);
+    setErr(null);
+    const { error } = await supabase.rpc("delete_my_account");
+    setBusy(false);
+    if (error) {
+      setErr(error.message);
+      return;
+    }
+    await supabase.auth.signOut({ scope: "local" });
+    onAccountDeleted();
   };
 
   useEffect(() => {
@@ -285,6 +302,41 @@ export default function FishPanel({
                   type="button"
                   className="opt-btn"
                   onClick={() => setConfirmRelease(false)}
+                >
+                  取消
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="release-block">
+          {!confirmDeleteAccount ? (
+            <button
+              type="button"
+              className="btn-danger"
+              onClick={() => setConfirmDeleteAccount(true)}
+            >
+              注销账号
+            </button>
+          ) : (
+            <div className="release-confirm">
+              <p className="release-warn">
+                确认注销？你的账号、鱼、等级、语句将被永久删除，无法恢复。
+              </p>
+              <div className="release-actions">
+                <button
+                  type="button"
+                  className="btn-danger"
+                  disabled={busy}
+                  onClick={() => void doDeleteAccount()}
+                >
+                  {busy ? "注销中…" : "确认注销"}
+                </button>
+                <button
+                  type="button"
+                  className="opt-btn"
+                  onClick={() => setConfirmDeleteAccount(false)}
                 >
                   取消
                 </button>

@@ -148,5 +148,17 @@ $$;
 
 grant execute on function public.release_fish(uuid) to anon, authenticated;
 
+-- ---------- RPC：注销账号（删除 auth 用户，鱼表随外键级联删除） ----------
+create or replace function public.delete_my_account()
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  delete from auth.users where id = auth.uid();
+$$;
+
+grant execute on function public.delete_my_account() to authenticated;
+
 -- ---------- 开启 fish 表实时订阅 ----------
 alter publication supabase_realtime add table public.fish;

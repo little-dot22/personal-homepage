@@ -444,9 +444,9 @@ export default function TankCanvas({
         drawCloud(ctx, W * 0.2, H * 0.12, t, s * 0.9);
         drawCloud(ctx, W * 0.55, H * 0.18, t + 2, s * 1.1);
         drawCloud(ctx, W * 0.86, H * 0.09, t + 4, s * 0.8);
-        // 剑鱼剪影（上半屏，双向，游在角色与鱼之后）
-        for (const sw of swordfish) {
-          const img = getSprite("swordfish");
+        // 剪影（上半屏，双向，游在角色与鱼之后）
+        for (const sw of silhouettes) {
+          const img = getSprite(sw.name);
           if (!img) continue;
           const w = sw.size * (img.naturalWidth / img.naturalHeight);
           const y = sw.y + Math.sin(t * 1.5 + sw.phase) * 6;
@@ -456,46 +456,24 @@ export default function TankCanvas({
           ctx.drawImage(img, -w / 2, -sw.size / 2, w, sw.size);
           ctx.restore();
         }
-        // 沙滩装饰：海螺埋进沙里、珊瑚立在沙滩上；水母悬浮在右上角
-        const groundY = sandGroundY(H);
-        const drawDeco = (
-          name: string,
-          fx: number,
-          fh: number,
-          bob: number,
-          bury: number
-        ) => {
-          const img = getSprite(name);
-          if (!img) return;
-          const h = fh * s;
-          const w = h * (img.naturalWidth / img.naturalHeight);
-          const x = fx * W;
-          const y = groundY - bob - h + bury * h;
-          ctx.drawImage(img, x - w / 2, y, w, h);
-          if (bury > 0) {
-            ctx.fillStyle = "#f2dda2";
-            ctx.beginPath();
-            ctx.ellipse(x, groundY - 4, w * 0.78, bury * h * 0.52 + 8, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = "rgba(220,184,119,0.6)";
-            ctx.beginPath();
-            ctx.ellipse(x, groundY - 1, w * 0.6, bury * h * 0.3 + 6, 0, 0, Math.PI * 2);
-            ctx.fill();
-          }
-        };
-        drawDeco("shell", 0.045, 46, 1, 0.55);
-        drawDeco("coral", 0.33, 95, 3, 0);
-        {
+        // 水母：右上角聚成一堆漂游，各自上下浮动
+        const jellySpots: Array<[number, number, number, number]> = [
+          [0.8, 0.11, 0.4, 1.1],
+          [0.875, 0.18, 0.6, 0.9],
+          [0.84, 0.075, 0.9, 1.3]
+        ];
+        for (let i = 0; i < jellySpots.length; i++) {
+          const [bx, by, ph, ph2] = jellySpots[i];
           const img = getSprite("jelly");
-          if (img) {
-            const h = 85 * s;
-            const w = h * (img.naturalWidth / img.naturalHeight);
-            const jx = W * 0.87 + Math.sin(t * 0.5) * 14;
-            const jy = H * 0.13 + Math.sin(t * 1.1) * 9;
-            ctx.drawImage(img, jx - w / 2, jy - h / 2, w, h);
-          }
+          if (!img) continue;
+          const h = (64 + i * 8) * s;
+          const w = h * (img.naturalWidth / img.naturalHeight);
+          const jx = W * bx + Math.sin(t * 0.4 + ph) * 20;
+          const jy = H * by + Math.sin(t * 1.1 + ph2) * 11;
+          ctx.drawImage(img, jx - w / 2, jy - h / 2, w, h);
         }
         // 角色（图片素材，站进沙地里、绘制在沙滩图层之上）
+        const groundY = sandGroundY(H);
         const drawChar = (
           name: string,
           x: number,
@@ -674,8 +652,9 @@ export default function TankCanvas({
     };
     scheduleSpeech();
 
-    // 剑鱼剪影：每隔一段时间出现，双向直线游动
-    const swordfish: Array<{
+    // 剪影（剑鱼/鲸鱼）：每 10~20 秒出现一条，双向直线游动；越大越稀有，最大半屏
+    const silhouettes: Array<{
+      name: string;
       x: number;
       y: number;
       speed: number;
@@ -683,7 +662,14 @@ export default function TankCanvas({
       phase: number;
       toRight: boolean;
     }> = [];
-    let swimTimer = 6;
+    let swimTimer = 5;
+    const rollSilhouetteSize = () => {
+      const r = Math.random();
+      if (r < 0.5) return H * (0.06 + Math.random() * 0.05);
+      if (r < 0.8) return H * (0.11 + Math.random() * 0.09);
+      if (r < 0.95) return H * (0.2 + Math.random() * 0.12);
+      return H * (0.32 + Math.random() * 0.18);
+    };
 
     let last = performance.now();
     let raf = 0;
@@ -693,25 +679,26 @@ export default function TankCanvas({
       last = now;
       const t = now / 1000;
       swimTimer -= dt;
-      if (swimTimer <= 0 && swordfish.length < 2) {
+      if (swimTimer <= 0 && silhouettes.length < 2) {
         const toRight = Math.random() < 0.5;
-        swordfish.push({
-          x: toRight ? -150 : W + 150,
-          y: H * (0.1 + Math.random() * 0.3),
+        silhouettes.push({
+          name: Math.random() < 0.5 ? "swordfish" : "whale",
+          x: toRight ? -200 : W + 200,
+          y: H * (0.14 + Math.random() * 0.2),
           speed: 65 + Math.random() * 40,
-          size: (70 + Math.random() * 25) * bikiniScale(H),
+          size: rollSilhouetteSize(),
           phase: Math.random() * Math.PI * 2,
           toRight
         });
-        swimTimer = 14 + Math.random() * 16;
+        swimTimer = 10 + Math.random() * 10;
       }
-      for (const sw of swordfish) {
+      for (const sw of silhouettes) {
         sw.x += (sw.toRight ? 1 : -1) * sw.speed * dt;
       }
-      for (let i = swordfish.length - 1; i >= 0; i--) {
-        const sw = swordfish[i];
-        if (sw.toRight ? sw.x > W + 180 : sw.x < -180) {
-          swordfish.splice(i, 1);
+      for (let i = silhouettes.length - 1; i >= 0; i--) {
+        const sw = silhouettes[i];
+        if (sw.toRight ? sw.x > W + sw.size : sw.x < -sw.size - 100) {
+          silhouettes.splice(i, 1);
         }
       }
       updateFish(dt, foodRef.current);

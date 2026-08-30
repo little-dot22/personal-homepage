@@ -7,7 +7,7 @@ import {
   renderStaticBg,
   sandGroundY
 } from "../../lib/bikini";
-import { getSprite } from "../../lib/bikiniAssets";
+import { getSilhouetteSprite, getSprite } from "../../lib/bikiniAssets";
 import { drawFish } from "../../lib/fishDraw";
 import { supabase, supabaseConfigured } from "../../lib/supabase";
 import type { FishAppearance, FishRow } from "../../lib/types";
@@ -446,7 +446,7 @@ export default function TankCanvas({
         drawCloud(ctx, W * 0.86, H * 0.09, t + 4, s * 0.8);
         // 剪影（上半屏，双向，游在角色与鱼之后；剑鱼图朝左、鲸鱼图朝右）
         for (const sw of silhouettes) {
-          const img = getSprite(sw.name);
+          const img = getSilhouetteSprite(sw.name);
           if (!img) continue;
           const w = sw.size * (img.naturalWidth / img.naturalHeight);
           const y = sw.y + Math.sin(t * 1.5 + sw.phase) * 6;

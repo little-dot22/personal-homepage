@@ -50,6 +50,29 @@ export default function FishPanel({
   const [err, setErr] = useState<string | null>(null);
   const [confirmRelease, setConfirmRelease] = useState(false);
   const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
+  const [rename, setRename] = useState(fish.name);
+  const [renameBusy, setRenameBusy] = useState(false);
+
+  const doRename = async () => {
+    if (!supabase) return;
+    const trimmed = rename.trim();
+    if (!trimmed) {
+      setErr("名字不能为空");
+      return;
+    }
+    setRenameBusy(true);
+    setErr(null);
+    const { error } = await supabase
+      .from("fish")
+      .update({ name: trimmed })
+      .eq("id", fish.id);
+    setRenameBusy(false);
+    if (error) setErr(error.message);
+    else {
+      setRename(trimmed);
+      onSaved("名字已改成 " + trimmed);
+    }
+  };
 
   const doRelease = async () => {
     if (!supabase) return;
@@ -139,6 +162,26 @@ export default function FishPanel({
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal modal-wide" onClick={(e) => e.stopPropagation()}>
         <h2 className="modal-title">我的鱼 · {fish.name}</h2>
+        <div className="rename-row">
+          <input
+            className="text-input"
+            value={rename}
+            maxLength={12}
+            placeholder="给鱼起新名字（12字内）"
+            onChange={(e) => setRename(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void doRename();
+            }}
+          />
+          <button
+            type="button"
+            className="opt-btn"
+            disabled={renameBusy || rename.trim() === fish.name}
+            onClick={() => void doRename()}
+          >
+            {renameBusy ? "改名中…" : "改名"}
+          </button>
+        </div>
         <div className="auth-tabs">
           <button
             type="button"
@@ -275,74 +318,76 @@ export default function FishPanel({
           </div>
         )}
 
-        <div className="release-block">
-          {!confirmRelease ? (
-            <button
-              type="button"
-              className="btn-danger"
-              onClick={() => setConfirmRelease(true)}
-            >
-              放生这条鱼
-            </button>
-          ) : (
-            <div className="release-confirm">
-              <p className="release-warn">
-                确认放生？这条鱼会永久消失，等级、语句、外观全部清空；放生后可以重新领养一条 0 级的新鱼。
-              </p>
-              <div className="release-actions">
-                <button
-                  type="button"
-                  className="btn-danger"
-                  disabled={busy}
-                  onClick={() => void doRelease()}
-                >
-                  {busy ? "放生中…" : "确认放生"}
-                </button>
-                <button
-                  type="button"
-                  className="opt-btn"
-                  onClick={() => setConfirmRelease(false)}
-                >
-                  取消
-                </button>
+        <div className="release-row">
+          <div className="release-block">
+            {!confirmRelease ? (
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={() => setConfirmRelease(true)}
+              >
+                放生这条鱼
+              </button>
+            ) : (
+              <div className="release-confirm">
+                <p className="release-warn">
+                  确认放生？这条鱼会永久消失，等级、语句、外观全部清空；放生后可以重新领养一条 0 级的新鱼。
+                </p>
+                <div className="release-actions">
+                  <button
+                    type="button"
+                    className="btn-danger"
+                    disabled={busy}
+                    onClick={() => void doRelease()}
+                  >
+                    {busy ? "放生中…" : "确认放生"}
+                  </button>
+                  <button
+                    type="button"
+                    className="opt-btn"
+                    onClick={() => setConfirmRelease(false)}
+                  >
+                    取消
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
-        <div className="release-block">
-          {!confirmDeleteAccount ? (
-            <button
-              type="button"
-              className="btn-danger"
-              onClick={() => setConfirmDeleteAccount(true)}
-            >
-              注销账号
-            </button>
-          ) : (
-            <div className="release-confirm">
-              <p className="release-warn">
-                确认注销？你的账号、鱼、等级、语句将被永久删除，无法恢复。
-              </p>
-              <div className="release-actions">
-                <button
-                  type="button"
-                  className="btn-danger"
-                  disabled={busy}
-                  onClick={() => void doDeleteAccount()}
-                >
-                  {busy ? "注销中…" : "确认注销"}
-                </button>
-                <button
-                  type="button"
-                  className="opt-btn"
-                  onClick={() => setConfirmDeleteAccount(false)}
-                >
-                  取消
-                </button>
+          <div className="release-block">
+            {!confirmDeleteAccount ? (
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={() => setConfirmDeleteAccount(true)}
+              >
+                注销账号
+              </button>
+            ) : (
+              <div className="release-confirm">
+                <p className="release-warn">
+                  确认注销？你的账号、鱼、等级、语句将被永久删除，无法恢复。
+                </p>
+                <div className="release-actions">
+                  <button
+                    type="button"
+                    className="btn-danger"
+                    disabled={busy}
+                    onClick={() => void doDeleteAccount()}
+                  >
+                    {busy ? "注销中…" : "确认注销"}
+                  </button>
+                  <button
+                    type="button"
+                    className="opt-btn"
+                    onClick={() => setConfirmDeleteAccount(false)}
+                  >
+                    取消
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>,

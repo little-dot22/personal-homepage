@@ -923,3 +923,31 @@ body::before {
   color: var(--fg);
   border-color: rgba(122, 160, 220, 0.5);
 }
+
+/* 改名行 */
+.rename-row {
+  display: flex;
+  gap: 10px;
+  margin: 14px 0 4px;
+  align-items: center;
+}
+
+.rename-row .text-input {
+  flex: 1;
+}
+
+.rename-row .opt-btn {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 放生与注销并排 */
+.release-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.release-row .release-block {
+  flex: 1 1 220px;
+}

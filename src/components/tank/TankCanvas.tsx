@@ -5,14 +5,9 @@ import {
   bikiniHorizon,
   bikiniScale,
   drawCloud,
-  drawKrabs,
-  drawPatrick,
-  drawPearl,
-  drawPlankton,
-  drawSponge,
-  drawSquidward,
   renderStaticBg
 } from "../../lib/bikini";
+import { getSprite } from "../../lib/bikiniAssets";
 import { drawFish } from "../../lib/fishDraw";
 import { supabase, supabaseConfigured } from "../../lib/supabase";
 import type { FishAppearance, FishRow } from "../../lib/types";
@@ -450,13 +445,31 @@ export default function TankCanvas({
         drawCloud(ctx, W * 0.2, H * 0.12, t, s * 0.9);
         drawCloud(ctx, W * 0.55, H * 0.18, t + 2, s * 1.1);
         drawCloud(ctx, W * 0.86, H * 0.09, t + 4, s * 0.8);
-        // 角色
-        drawSponge(ctx, W * 0.088, horizon + 4, t, s);
-        drawPatrick(ctx, W * 0.3, horizon + 6, t, s);
-        drawSquidward(ctx, W * 0.505, horizon + 4, t, s);
-        drawPearl(ctx, W * 0.625, horizon + 4, t, s * 0.95);
-        drawKrabs(ctx, W * 0.705, horizon + 4, t, s);
-        drawPlankton(ctx, W * 0.9, horizon + 8, t, s);
+        // 角色（图片素材，底部锚点 + 呼吸蹦跳动画）
+        const drawChar = (
+          name: string,
+          x: number,
+          targetH: number,
+          bob: number
+        ) => {
+          const img = getSprite(name);
+          if (!img) return;
+          const w = targetH * (img.naturalWidth / img.naturalHeight);
+          ctx.drawImage(img, x - w / 2, horizon + 4 - bob - targetH, w, targetH);
+        };
+        // 蟹堡王（大，主视觉，先画让角色叠在前面）
+        drawChar("krusty", W * 0.66, 236 * s, Math.abs(Math.sin(t * 0.8)) * 2);
+        // 左侧住宅区
+        drawChar("sponge", W * 0.075, 110 * s, Math.abs(Math.sin(t * 2.2)) * 3);
+        drawChar("gary", W * 0.117, 52 * s, Math.abs(Math.sin(t * 1.4 + 1)) * 2);
+        drawChar("patrick", W * 0.265, 112 * s, Math.abs(Math.sin(t * 1.8 + 1)) * 2.5);
+        drawChar("squidward", W * 0.455, 116 * s, Math.abs(Math.sin(t * 1.5 + 2)) * 2);
+        // 蟹堡王周围
+        drawChar("sandy", W * 0.575, 108 * s, Math.abs(Math.sin(t * 2 + 3)) * 2.5);
+        drawChar("krabs", W * 0.652, 98 * s, Math.abs(Math.sin(t * 2 + 0.5)) * 2);
+        drawChar("pearl", W * 0.755, 112 * s, Math.abs(Math.sin(t * 1.7 + 0.8)) * 2.5);
+        // 海之霸旁
+        drawChar("plankton", W * 0.895, 44 * s, Math.abs(Math.sin(t * 6)) * 6);
       }
 
       // 气泡

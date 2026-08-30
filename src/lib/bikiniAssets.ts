@@ -1,14 +1,14 @@
-import sponge from "../../assert/bikini/sponge.png";
-import patrick from "../../assert/bikini/patrick.png";
-import squidward from "../../assert/bikini/squidward.png";
-import krabs from "../../assert/bikini/krabs.png";
-import pearl from "../../assert/bikini/pearl.png";
-import plankton from "../../assert/bikini/plankton.png";
-import sandy from "../../assert/bikini/Sandy.png";
-import gary from "../../assert/bikini/GarytheSnail.png";
-import krusty from "../../assert/bikini/krusty.png";
-import swordfish from "../../assert/decoration/SwordfishSilhouette.png";
-import whale from "../../assert/decoration/WhaleSilhouette.png";
+import sponge from "../../assert/bikini/sponge.webp";
+import patrick from "../../assert/bikini/patrick.webp";
+import squidward from "../../assert/bikini/squidward.webp";
+import krabs from "../../assert/bikini/krabs.webp";
+import pearl from "../../assert/bikini/pearl.webp";
+import plankton from "../../assert/bikini/plankton.webp";
+import sandy from "../../assert/bikini/Sandy.webp";
+import gary from "../../assert/bikini/GarytheSnail.webp";
+import krusty from "../../assert/bikini/krusty.webp";
+import swordfish from "../../assert/decoration/SwordfishSilhouette.webp";
+import whale from "../../assert/decoration/WhaleSilhouette.webp";
 
 const sources: Record<string, string> = {
   sponge,

@@ -439,7 +439,7 @@ export default function TankCanvas({
       // 比基尼海滩背景
       if (bgCtx && bgCanvas.width > 0) {
         ctx.drawImage(bgCanvas, 0, 0, W, H);
-        const s = bikiniScale(H);
+        const s = bikiniScale(H, W);
         // 花云
         drawCloud(ctx, W * 0.2, H * 0.12, t, s * 0.9);
         drawCloud(ctx, W * 0.55, H * 0.18, t + 2, s * 1.1);

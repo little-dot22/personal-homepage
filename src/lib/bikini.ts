@@ -1,7 +1,7 @@
 // 比基尼海滩背景（沙地 + 花云；蟹堡王与角色用图片素材，居中布局）
 
-export const bikiniScale = (H: number) =>
-  Math.min(1.2, Math.max(0.55, H / 900));
+export const bikiniScale = (H: number, W = 2000) =>
+  Math.min(1.2, Math.max(0.55, Math.min(H / 900, W / 1150)));
 
 export const bikiniHorizon = (H: number) => H * 0.9;
 
@@ -35,7 +35,7 @@ function sandFlower(ctx: CanvasRenderingContext2D, x: number, y: number, s: numb
 }
 
 export function renderStaticBg(ctx: CanvasRenderingContext2D, W: number, H: number) {
-  const s = bikiniScale(H);
+  const s = bikiniScale(H, W);
   const horizon = bikiniHorizon(H);
 
   const water = ctx.createLinearGradient(0, 0, 0, H);

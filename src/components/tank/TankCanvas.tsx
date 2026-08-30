@@ -458,7 +458,7 @@ export default function TankCanvas({
           ctx.drawImage(img, x - w / 2, groundY - bob - targetH, w, targetH);
         };
         // 蟹堡王居中，更大
-        drawChar("krusty", W * 0.5, 700 * s, 0);
+        drawChar("krusty", W * 0.5, 500 * s, 0);
         // 组一：海绵宝宝 + 小蜗 + 派大星 + 珊迪（屏幕左侧，互相挨着）
         drawChar("sponge", W * 0.135, 170 * s, Math.abs(Math.sin(t * 2.2)) * 2);
         drawChar("gary", W * 0.17, 78 * s, Math.abs(Math.sin(t * 1.4 + 1)) * 1.5);

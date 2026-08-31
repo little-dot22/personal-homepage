@@ -3,6 +3,7 @@ import type { Session } from "@supabase/supabase-js";
 import AdoptWizard from "../components/tank/AdoptWizard";
 import AuthModal from "../components/tank/AuthModal";
 import FishPanel from "../components/tank/FishPanel";
+import MusicPlayer from "../components/tank/MusicPlayer";
 import TankCanvas, {
   type EatPayload
 } from "../components/tank/TankCanvas";
@@ -119,6 +120,7 @@ export default function FishTankPage() {
         onAnnounce={showToast}
         onActionBlocked={showToast}
       />
+      <MusicPlayer />
 
       <div className="tank-hud">
         <span className="hud-chip">鱼缸 {fish.length}/50</span>
